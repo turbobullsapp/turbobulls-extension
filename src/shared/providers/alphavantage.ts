@@ -1,8 +1,9 @@
 import { daysBetween, secondsUntilUtcMidnight, todayUtc } from '../protocol/dates.js'
 import { ConnectorError } from '../protocol/errors.js'
 import { LIMITS, type HistoryAnswer, type SearchResult } from '../protocol/types.js'
+import { BoundedCache, CURRENCY_CACHE_SIZE } from './cache.js'
 import { toMajor, type MajorCurrency } from './currency.js'
-import { asString, getJson, isRecord, type JsonAnswer } from './http.js'
+import { asString, getJson, HISTORY_ANSWER_BYTES, isRecord, type JsonAnswer } from './http.js'
 import { finalizeSeries } from './series.js'
 import type { ProviderAdapter, ProviderContext } from './types.js'
 
@@ -11,7 +12,8 @@ const BASE = 'https://www.alphavantage.co/query'
 /** "compact" returns the latest 100 trading days, about 140 calendar days. */
 const COMPACT_DAYS = 140
 
-const currencyCache = new Map<string, MajorCurrency>()
+/** Symbol -> currency, kept once a history call for the symbol has worked. */
+const currencyCache = new BoundedCache<string, MajorCurrency>(CURRENCY_CACHE_SIZE)
 
 /**
  * Alpha Vantage only takes the key as a query parameter, so this URL holds it. It is built here
@@ -88,12 +90,11 @@ async function resolveCurrency(symbol: string, ctx: ProviderContext): Promise<Ma
     ? (await searchRaw(symbol, ctx)).find((m) => m.symbol.toUpperCase() === key)?.currency
     : { currency: 'USD', divisor: 1 }
   if (!found) throw new ConnectorError('NOT_FOUND', 'Alpha Vantage did not say which currency this symbol trades in.')
-  currencyCache.set(key, found)
   return found
 }
 
 async function dailySeries(symbol: string, outputsize: 'compact' | 'full', ctx: ProviderContext): Promise<Record<string, unknown>> {
-  const res = await getJson(ctx, NAME, url({ function: 'TIME_SERIES_DAILY', symbol, outputsize, datatype: 'json' }, ctx))
+  const res = await getJson(ctx, NAME, url({ function: 'TIME_SERIES_DAILY', symbol, outputsize, datatype: 'json' }, ctx), {}, HISTORY_ANSWER_BYTES)
   const err = failure(res, ctx.now?.() ?? new Date())
   if (err) throw err
   const series = (res.body as Record<string, unknown>)['Time Series (Daily)']
@@ -131,6 +132,7 @@ export const alphavantage: ProviderAdapter = {
     } else {
       series = await dailySeries(symbol, 'compact', ctx)
     }
+    currencyCache.set(symbol.toUpperCase(), currency)
     const rows = Object.entries(series).map(([date, day]) => ({
       date,
       // TIME_SERIES_DAILY is as traded; the adjusted series would rewrite history at every split.

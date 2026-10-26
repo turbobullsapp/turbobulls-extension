@@ -1,15 +1,17 @@
 import { toUnixSeconds, fromUnixSeconds } from '../protocol/dates.js'
 import { ConnectorError } from '../protocol/errors.js'
 import { LIMITS, type HistoryAnswer, type SearchResult } from '../protocol/types.js'
+import { BoundedCache, CURRENCY_CACHE_SIZE } from './cache.js'
 import { toMajor, type MajorCurrency } from './currency.js'
-import { asString, getJson, isRecord, retryAfterSeconds, type JsonAnswer } from './http.js'
+import { asString, getJson, HISTORY_ANSWER_BYTES, isRecord, retryAfterSeconds, type JsonAnswer } from './http.js'
 import { finalizeSeries, type RawRow } from './series.js'
 import type { ProviderAdapter, ProviderContext } from './types.js'
 
 const NAME = 'Finnhub'
 const BASE = 'https://finnhub.io/api/v1'
 
-const currencyCache = new Map<string, MajorCurrency>()
+/** Symbol -> currency, kept once a history call for the symbol has worked. */
+const currencyCache = new BoundedCache<string, MajorCurrency>(CURRENCY_CACHE_SIZE)
 
 function headers(ctx: ProviderContext): Record<string, string> {
   // Finnhub accepts the key in a header, so it never sits in a URL.
@@ -48,7 +50,6 @@ async function resolveCurrency(symbol: string, ctx: ProviderContext): Promise<Ma
   // US listings carry no exchange suffix (AAPL) and trade in dollars.
   if (!found && /^[A-Z0-9-]+$/i.test(symbol)) found = { currency: 'USD', divisor: 1 }
   if (!found) throw new ConnectorError('NOT_FOUND', 'Finnhub did not say which currency this symbol trades in.')
-  currencyCache.set(key, found)
   return found
 }
 
@@ -84,10 +85,11 @@ export const finnhub: ProviderAdapter = {
       from: String(toUnixSeconds(from)),
       to: String(toUnixSeconds(to) + 86_399),
     })
-    const res = await getJson(ctx, NAME, `${BASE}/stock/candle?${params}`, headers(ctx))
+    const res = await getJson(ctx, NAME, `${BASE}/stock/candle?${params}`, headers(ctx), HISTORY_ANSWER_BYTES)
     const err = failure(res)
     if (err) throw err
     const body = isRecord(res.body) ? res.body : undefined
+    if (body?.s === 'no_data' || body?.s === 'ok') currencyCache.set(symbol.toUpperCase(), currency)
     if (body?.s === 'no_data') return { symbol, currency: currency.currency, prices: [] }
     if (body?.s !== 'ok' || !Array.isArray(body.t) || !Array.isArray(body.c)) {
       throw new ConnectorError('PROVIDER_ERROR', 'Finnhub sent an answer this connector does not understand.')

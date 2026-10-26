@@ -20,20 +20,21 @@ Chrome and Edge. For Firefox, or if you prefer a program to an extension, use
 - **It cannot read any web page**, Turbobulls included. It has no content scripts and no access to
   your tabs.
 - **Only `https://app.turbobulls.com` can talk to it** (`externally_connectable`). Chrome does not
-  even show the extension to other websites, and the extension checks the sender again.
+  even show the extension to other websites, and the extension checks again that the sender is the
+  app's own page, not a frame or a sandboxed page.
 - **It never accepts a web address to fetch.** The app can only ask for a search or for prices
   from one of the four providers, so the extension cannot be used to reach anything else.
-- **Your key is sent only to its own provider**, in a header where the provider accepts one, and
-  never appears in an answer, a message or a log.
+- **Your key is sent only to its own provider**, in a header where the provider accepts one, never
+  follows a redirect elsewhere, and never appears in an answer, a message or a log.
 
 ## Install
 
-Until the store listings are live, load it by hand:
+From the Chrome Web Store (Chrome and Edge), once the listing is live. The Turbobulls app talks
+only to the store version: a copy loaded by hand gets a different extension id, which the app does
+not know, and that is on purpose (the app must never trust an id anyone could claim).
 
-1. Download `turbobulls-extension-<version>-chrome.zip` from the
-   [releases](https://github.com/turbobullsapp/turbobulls-extension/releases) and unzip it.
-2. Open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click
-   **Load unpacked** and choose the unzipped folder.
+To try it before the listing, build the development version and run the app's local dev server,
+which knows the development id (see Development below).
 
 ## Use it
 
@@ -62,8 +63,13 @@ pnpm dev-id       # prints the development extension id
 ```
 
 A development build also answers the app's local dev server (`http://localhost:3000`) and always
-has the id `flnofeaegigjpjinmbhlfgagajconknk`, so the app can address it. Point the app at it with
-`NEXT_PUBLIC_CONNECTOR_EXTENSION_IDS=flnofeaegigjpjinmbhlfgagajconknk`. Store builds have neither.
+has the id `flnofeaegigjpjinmbhlfgagajconknk`, so the app can address it. Point the app's dev
+server at it with `NEXT_PUBLIC_CONNECTOR_EXTENSION_IDS=flnofeaegigjpjinmbhlfgagajconknk`. Store
+builds have neither, and the production app must never list the development id: anyone can build
+an extension with it from the public key in `src/dev-key.ts`.
+
+`pnpm dev` (live reload) adds permissions WXT needs for reloading; never ship its output. Releases
+are built with `pnpm zip`, which makes store builds.
 
 ## License
 

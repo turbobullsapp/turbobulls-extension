@@ -12,10 +12,12 @@ into an issue, even a revoked one.
   Even an update that turned malicious could not read a portfolio shown in Turbobulls.
 - **Only the Turbobulls app can message it.** The manifest's `externally_connectable` names
   `https://app.turbobulls.com` alone, so Chrome hides the extension from every other website. The
-  background checks the sender's exact origin again before answering, and other extensions are
-  refused.
+  background checks again that the sender is the app's own top-level page (its exact origin, not
+  a frame, not a sandboxed page reporting origin "null"), and other extensions are refused.
 - **It cannot be used as a proxy.** No message carries a URL. The extension builds each provider
-  request itself, and its host permissions cover only the four provider APIs.
+  request itself, and its host permissions cover only the four provider APIs. It never follows a
+  redirect, so a key cannot be carried to another host, and it stops reading any answer past a size
+  limit.
 - **Your keys stay in your browser.** They live in `storage.local`: this device only, never
   synced, readable only by this extension. A key is sent only to its own provider, as a header
   where the provider accepts one (EODHD, Twelve Data, Finnhub). Alpha Vantage only accepts it in
@@ -26,8 +28,13 @@ into an issue, even a revoked one.
 
 ## What it cannot protect against
 
-Extension storage is not encrypted on disk, the same as the rest of your browser profile. Software
-running on your computer with your user's rights can read it. Keep your computer up to date.
+- **Scripts on the Turbobulls app itself.** The extension trusts the app's page. If someone could
+  run their own script on app.turbobulls.com, it could make searches and price requests with your
+  keys (never read them).
+- **Your own files.** Extension storage is not encrypted on disk, the same as the rest of your
+  browser profile. Software running on your computer with your user's rights can read it.
+
+Keep your computer and browser up to date.
 
 ## Releases
 

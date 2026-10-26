@@ -2,7 +2,7 @@ import { addDays, secondsUntilUtcMidnight } from '../protocol/dates.js'
 import { ConnectorError } from '../protocol/errors.js'
 import { LIMITS, type HistoryAnswer, type SearchResult } from '../protocol/types.js'
 import { toMajor, type MajorCurrency } from './currency.js'
-import { asString, getJson, isRecord, retryAfterSeconds, type JsonAnswer } from './http.js'
+import { asString, getJson, HISTORY_ANSWER_BYTES, isRecord, retryAfterSeconds, type JsonAnswer } from './http.js'
 import { finalizeSeries, type RawRow } from './series.js'
 import type { ProviderAdapter, ProviderContext } from './types.js'
 
@@ -113,7 +113,7 @@ export const twelvedata: ProviderAdapter = {
         order: 'desc',
       })
       if (exchange) params.set('exchange', exchange)
-      const res = await getJson(ctx, NAME, `${BASE}/time_series?${params}`, headers(ctx))
+      const res = await getJson(ctx, NAME, `${BASE}/time_series?${params}`, headers(ctx), HISTORY_ANSWER_BYTES)
       const err = failure(res, now)
       if (err === 'empty') break
       if (err) throw err

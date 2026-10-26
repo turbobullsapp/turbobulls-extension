@@ -6,6 +6,7 @@ import { requestIdOf, validateRequest } from './protocol/validate.js'
 import { createLimiter } from './providers/limiter.js'
 import { ADAPTERS, MIN_GAP_MS, providerInfo } from './providers/registry.js'
 import type { FetchLike, ProviderContext } from './providers/types.js'
+import { sanitizeSearchResult } from './sanitize.js'
 
 export interface DispatchDeps {
   connector: ConnectorKind
@@ -73,7 +74,8 @@ export async function dispatch(input: unknown, deps: DispatchDeps): Promise<Conn
         const { provider, query } = request.params
         key = await keyFor(provider, deps)
         const ctx = context(key, deps)
-        const results = await limiterFor(provider)(() => ADAPTERS[provider].search(query, ctx))
+        const raw = await limiterFor(provider)(() => ADAPTERS[provider].search(query, ctx))
+        const results = raw.map(sanitizeSearchResult).filter((r) => r !== undefined)
         return { id, ok: true, result: { results: results.slice(0, LIMITS.searchResults) } }
       }
       case 'history': {

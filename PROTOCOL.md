@@ -47,6 +47,11 @@ Answer, failure:
 
 `message` is plain English for people. It never contains a key or a provider URL.
 
+Every string in an answer (names, exchanges, types, messages) comes from a provider or a connector
+and is untrusted plain text: show it as text, never as HTML. Connectors strip control characters
+and cap names at 200 characters, and drop any search result whose `symbol` they would not accept
+back in a `history` request.
+
 ## Operations
 
 ### hello

@@ -1,5 +1,5 @@
 import { ConnectorError } from '../protocol/errors.js'
-import type { ProviderContext } from './types.js'
+import type { HttpResponseLike, ProviderContext } from './types.js'
 
 export interface JsonAnswer {
   status: number
@@ -9,18 +9,65 @@ export interface JsonAnswer {
 }
 
 const DEFAULT_TIMEOUT_MS = 30_000
-const MAX_ANSWER_CHARS = 32 * 1024 * 1024
+
+/** Largest answer read for a search or a lookup. */
+export const SMALL_ANSWER_BYTES = 1024 * 1024
+/** Largest answer read for a price history (a 20,000-day series is a few megabytes). */
+export const HISTORY_ANSWER_BYTES = 10 * 1024 * 1024
+
+const MAX_RETRY_AFTER = 86_400
+
+function tooLarge(providerName: string): ConnectorError {
+  return new ConnectorError('PROVIDER_ERROR', `${providerName} sent an answer too large to use.`)
+}
+
+/** Read the answer, stopping as soon as it passes `maxBytes` rather than buffering all of it. */
+async function readText(res: HttpResponseLike, maxBytes: number, providerName: string, abort: () => void): Promise<string> {
+  const declared = Number(res.headers.get('content-length'))
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    abort()
+    throw tooLarge(providerName)
+  }
+  if (!res.body) {
+    const text = await res.text()
+    if (text.length > maxBytes) throw tooLarge(providerName)
+    return text
+  }
+  const reader = res.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => undefined)
+      abort()
+      throw tooLarge(providerName)
+    }
+    chunks.push(value)
+  }
+  const all = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    all.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return new TextDecoder('utf-8').decode(all)
+}
 
 /**
- * GET a provider URL and parse the answer. Network failures and timeouts become a PROVIDER_ERROR
- * that names the provider only: never the URL, which can carry the key for providers that only
- * accept it as a query parameter.
+ * GET a provider URL and parse the answer. Redirects are refused: a key travels only to the host
+ * it was built for, never to wherever a redirect points. Network failures and timeouts become a
+ * PROVIDER_ERROR that names the provider only, never the URL, which can carry the key for
+ * providers that only accept it as a query parameter.
  */
 export async function getJson(
   ctx: ProviderContext,
   providerName: string,
   url: string,
   headers: Record<string, string> = {},
+  maxBytes: number = SMALL_ANSWER_BYTES,
 ): Promise<JsonAnswer> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), ctx.timeoutMs ?? DEFAULT_TIMEOUT_MS)
@@ -29,11 +76,12 @@ export async function getJson(
       method: 'GET',
       headers: { Accept: 'application/json', ...headers },
       signal: controller.signal,
+      redirect: 'error',
     })
-    const text = await res.text()
-    if (text.length > MAX_ANSWER_CHARS) {
-      throw new ConnectorError('PROVIDER_ERROR', `${providerName} sent an answer too large to use.`)
+    if (res.status >= 300 && res.status < 400) {
+      throw new ConnectorError('PROVIDER_ERROR', `${providerName} answered with a redirect, which the connector does not follow.`)
     }
+    const text = await readText(res, maxBytes, providerName, () => controller.abort())
     let body: unknown
     try {
       body = text.length > 0 ? JSON.parse(text) : undefined
@@ -52,16 +100,34 @@ export async function getJson(
   }
 }
 
-/** Seconds from a Retry-After header (seconds or an HTTP date), or the fallback. */
+/** Seconds from a Retry-After header (seconds or an HTTP date), or the fallback; 1 second to 1 day. */
 export function retryAfterSeconds(headers: { get(name: string): string | null }, fallback: number, now = Date.now()): number {
-  const raw = headers.get('retry-after')
-  if (raw) {
-    const seconds = Number(raw)
-    if (Number.isFinite(seconds) && seconds >= 0) return Math.ceil(seconds)
-    const at = Date.parse(raw)
-    if (Number.isFinite(at)) return Math.max(1, Math.ceil((at - now) / 1000))
+  return clampRetryAfter(parseRetryAfter(headers.get('retry-after'), now) ?? fallback)
+}
+
+function parseRetryAfter(raw: string | null, now: number): number | undefined {
+  if (!raw) return undefined
+  const seconds = Number(raw)
+  if (Number.isFinite(seconds)) return Math.ceil(seconds)
+  const at = Date.parse(raw)
+  return Number.isFinite(at) ? Math.ceil((at - now) / 1000) : undefined
+}
+
+export function clampRetryAfter(seconds: number): number {
+  if (!Number.isFinite(seconds)) return MAX_RETRY_AFTER
+  return Math.min(MAX_RETRY_AFTER, Math.max(1, Math.ceil(seconds)))
+}
+
+/**
+ * One URL path segment from user input. encodeURIComponent leaves dots alone, and a segment of
+ * only dots would make the URL climb out of the provider's API path.
+ */
+export function pathSegment(value: string): string {
+  const encoded = encodeURIComponent(value)
+  if (encoded === '' || /^\.+$/.test(encoded)) {
+    throw new ConnectorError('BAD_REQUEST', 'That value cannot be sent to the provider.')
   }
-  return fallback
+  return encoded
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

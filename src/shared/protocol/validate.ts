@@ -54,14 +54,22 @@ function readQuery(params: Record<string, unknown>): string {
   return query
 }
 
+/** A ticker: the characters tickers use, a letter or digit, and never "//" (which only a URL has). */
+export function isValidSymbol(symbol: string): boolean {
+  return (
+    symbol.length <= LIMITS.symbolLength &&
+    SYMBOL_RE.test(symbol) &&
+    ALNUM_RE.test(symbol) &&
+    !symbol.includes('//') &&
+    symbol === symbol.trim()
+  )
+}
+
 function readSymbol(params: Record<string, unknown>): string {
   const s = params.symbol
   if (typeof s !== 'string') throw bad('The request needs a symbol.')
   const symbol = s.trim()
-  // A ticker has a letter or digit and never "//" (which only a URL would).
-  if (symbol.length > LIMITS.symbolLength || !SYMBOL_RE.test(symbol) || !ALNUM_RE.test(symbol) || symbol.includes('//')) {
-    throw bad('That symbol has characters no ticker uses.')
-  }
+  if (!isValidSymbol(symbol)) throw bad('That symbol has characters no ticker uses.')
   return symbol
 }
 

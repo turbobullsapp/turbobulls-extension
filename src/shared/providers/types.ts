@@ -5,13 +5,15 @@ export interface HttpResponseLike {
   status: number
   ok: boolean
   headers: { get(name: string): string | null }
+  /** Read in chunks when present, so an oversized answer is cut off instead of buffered. */
+  body?: ReadableStream<Uint8Array> | null
   text(): Promise<string>
 }
 
 /** A fetch the caller passes in: global fetch in Node 22+ and in an extension service worker. */
 export type FetchLike = (
   url: string,
-  init: { method: 'GET'; headers: Record<string, string>; signal: AbortSignal },
+  init: { method: 'GET'; headers: Record<string, string>; signal: AbortSignal; redirect: 'error' },
 ) => Promise<HttpResponseLike>
 
 export interface ProviderContext {
