@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="manifest.open_in_tab" content="true" />
+    <title>Turbobulls Connector</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <header class="intro">
+        <img src="/icon/128.png" alt="" width="48" height="48" />
+        <div>
+          <h1>Turbobulls Connector</h1>
+          <p>Prices from your own market-data provider, with your own API key, for Turbobulls.</p>
+        </div>
+      </header>
+
+      <section class="card" aria-labelledby="how">
+        <h2 id="how">How it works</h2>
+        <ul>
+          <li>Paste the API key of the provider you pay for below. It stays in this browser, on this device.</li>
+          <li>In Turbobulls, open a custom asset and choose <strong>From my data provider</strong>.</li>
+          <li>Turbobulls asks this extension for prices; the extension asks your provider and passes back only the prices.</li>
+          <li>Turbobulls never sees your key. This extension cannot read any web page, Turbobulls included.</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="keys">
+        <h2 id="keys">Your API keys</h2>
+        <div id="providers"></div>
+      </section>
+
+      <footer>
+        <span id="version"></span>
+        <a href="https://github.com/turbobullsapp/turbobulls-extension" target="_blank" rel="noopener noreferrer">Source code</a>
+        <a href="https://turbobulls.com" target="_blank" rel="noopener noreferrer">turbobulls.com</a>
+      </footer>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

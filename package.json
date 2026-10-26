@@ -1,0 +1,33 @@
+{
+  "name": "turbobulls-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turbobulls Connector: prices from your own market-data provider, with your own API key, for the Turbobulls app.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build -b chrome && wxt build -b edge",
+    "build:dev": "wxt build -b chrome --mode development",
+    "zip": "wxt zip -b chrome && wxt zip -b edge",
+    "postinstall": "wxt prepare",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "dev-id": "node scripts/extension-id.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/turbobullsapp/turbobulls-extension.git"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5",
+    "wxt": "0.21.5"
+  }
+}
