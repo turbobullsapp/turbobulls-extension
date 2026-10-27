@@ -5,7 +5,7 @@ import { customHistory } from '../../shared/custom/history.js'
 import { addDays, todayUtc } from '../../shared/protocol/dates.js'
 import { ConnectorError } from '../../shared/protocol/errors.js'
 import { LIMITS } from '../../shared/protocol/types.js'
-import { getCustomSources, hostOf, newSourceId, removeCustomSource, saveCustomSource, sitePattern } from '../../sources'
+import { getCustomSources, hostOf, KEY_NEEDED, keyDecision, newSourceId, reconcileSitePermissions, removeCustomSource, saveCustomSource, sitePattern } from '../../sources'
 import { el, field, input, select, setStatus } from './dom'
 
 const DATE_FORMAT_LABELS: Record<(typeof DATE_FORMATS)[number], string> = {
@@ -193,8 +193,13 @@ async function openForm(container: HTMLElement, onChange: () => void, existing: 
       setStatus(status, 'Type a symbol to try, since the address uses {SYMBOL}.', 'error')
       return
     }
+    const decision = keyDecision(existing, source, form.key.value)
+    if (decision === 'retype' || decision === 'missing') {
+      setStatus(status, KEY_NEEDED[decision], 'error')
+      return
+    }
     setStatus(status, 'Asking the source for the last 30 days...')
-    const key = form.key.value.trim() || (existing ? await getKey(existing.id) : undefined)
+    const key = decision === 'typed' ? form.key.value.trim() : decision === 'saved' && existing ? await getKey(existing.id) : undefined
     const today = todayUtc()
     try {
       const answer = await customHistory(source, symbol, addDays(today, -30), today, {
@@ -217,13 +222,20 @@ async function openForm(container: HTMLElement, onChange: () => void, existing: 
   save.addEventListener('click', async () => {
     const source = parse()
     if (!source) return
+    const decision = keyDecision(existing, source, form.key.value)
+    if (decision === 'retype' || decision === 'missing') {
+      setStatus(status, KEY_NEEDED[decision], 'error')
+      return
+    }
     if (!(await askForSite(source))) {
       setStatus(status, `Chrome did not allow reaching ${hostOf(source)}, so the source was not saved.`, 'error')
       return
     }
     try {
       await saveCustomSource(source)
-      if (form.key.value.trim()) await setKey(source.id, form.key.value)
+      if (decision === 'typed') await setKey(source.id, form.key.value)
+      else if (decision === 'none') await setKey(source.id, '')
+      await reconcileSitePermissions()
     } catch (e) {
       setStatus(status, e instanceof Error ? e.message : 'The source could not be saved.', 'error')
       return
@@ -231,7 +243,10 @@ async function openForm(container: HTMLElement, onChange: () => void, existing: 
     await renderSources(container, onChange)
     onChange()
   })
-  cancel.addEventListener('click', () => void renderSources(container, onChange))
+  cancel.addEventListener('click', async () => {
+    await reconcileSitePermissions()
+    await renderSources(container, onChange)
+  })
 
   container.replaceChildren(
     el(

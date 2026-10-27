@@ -56,7 +56,9 @@ describe('parseCustomSource', () => {
     [{ json: { items: 'data.__proto__', close: 'nav' } }, 'names separated by dots'],
     [{ json: { items: 'data' } }, 'price field is required'],
     [{ currency: 'Euro' }, 'three-letter code'],
-    [{ headers: { Cookie: 'a=b' } }, 'header name is not allowed'],
+    [{ headers: { Cookie: 'a=b' } }, 'Header 1 has a name that is not allowed'],
+    [{ headers: { 'X-Forwarded-Host': 'evil.example' } }, 'Header 1 has a name that is not allowed'],
+    [{ url: 'https://api.example.com/files/%{SYMBOL}%{SYMBOL}/data.csv' }, '% right before a placeholder'],
     [{ headers: { 'X-Key': '{SYMBOL}' } }, 'unknown placeholder'],
     [{ dateFormat: 'YYYY/MM/DD' }, 'date format'],
     [{ decimal: ';' }, 'decimal separator'],
@@ -175,7 +177,7 @@ describe('customHistory', () => {
       ],
     })
     expect(calls[0]!.url.pathname).toBe('/nav/RO123')
-    expect(calls[0]!.redirect).toBe('follow')
+    expect(calls[0]!.redirect).toBe('error')
     expect(calls[0]!.credentials).toBe('omit')
   })
 
@@ -280,7 +282,76 @@ describe('dispatch with custom sources', () => {
       deps({ fetch, canReach: (origin) => (seen.push(origin), false) }),
     )
     expect(answer).toMatchObject({ ok: false, error: { code: 'NOT_CONFIGURED' } })
+    expect(JSON.stringify(answer)).not.toContain('api.example.com')
     expect(seen).toEqual(['https://api.example.com'])
     expect(calls).toHaveLength(0)
+  })
+})
+
+describe('review fixes', () => {
+  it('never follows a redirect, even for a source without a key', async () => {
+    const { fetch, calls } = fakeFetch([{ match: () => true, status: 302, headers: { Location: 'http://127.0.0.1:8080/internal' } }])
+    const s = source({ headers: { 'X-Api-Key': 'typed-straight-in' } })
+    const err = (await customHistory(s, 'RO123', '2026-10-01', '2026-10-26', { fetch }).catch((e: unknown) => e)) as ConnectorError
+    expect(err.code).toBe('PROVIDER_ERROR')
+    expect(err.message).toContain('never follows a redirect')
+    expect(calls).toHaveLength(1)
+    expect(calls[0]!.redirect).toBe('error')
+  })
+
+  it('refuses a symbol that would climb the path, and keeps ordinary slashes', () => {
+    const s = source({ url: 'https://api.example.com/v1/funds/{SYMBOL}/prices' })
+    for (const symbol of ['../../../v2/export', '..', 'a/../b', './x', 'a//b']) {
+      expect(() => buildUrl(s, { symbol, from: '2026-10-01', to: '2026-10-26' })).toThrow(ConnectorError)
+    }
+    expect(buildUrl(s, { symbol: 'BTC/USD', from: '2026-10-01', to: '2026-10-26' })).toBe('https://api.example.com/v1/funds/BTC%2FUSD/prices')
+  })
+
+  it('accepts a template that names the default port', () => {
+    const s = source({ url: 'https://api.example.com:443/nav/{SYMBOL}' })
+    expect(buildUrl(s, { symbol: 'X1', from: '2026-10-01', to: '2026-10-26' })).toBe('https://api.example.com:443/nav/X1')
+  })
+
+  it('reads a flood of blank lines without holding them', async () => {
+    const s = source({ format: 'csv', json: undefined, csv: { date: 'Date', close: 'Close' }, url: 'https://example.org/p.csv' })
+    const { fetch } = fakeFetch([{ match: () => true, text: '\n'.repeat(2_000_000) }])
+    expect((await customHistory(s, 'X1', '2026-10-01', '2026-10-26', { fetch })).prices).toEqual([])
+  })
+
+  it('refuses answers with too many rows or columns', async () => {
+    const csv = source({ format: 'csv', json: undefined, csv: { date: '1', close: '2' }, url: 'https://example.org/p.csv' })
+    const many = fakeFetch([{ match: () => true, text: '2026-10-23,1\n'.repeat(100_001) }]).fetch
+    await expect(customHistory(csv, 'X1', '2026-10-01', '2026-10-26', { fetch: many })).rejects.toThrow('more than 100,000 rows')
+    const wide = fakeFetch([{ match: () => true, text: `${','.repeat(1_000)}\n` }]).fetch
+    await expect(customHistory(csv, 'X1', '2026-10-01', '2026-10-26', { fetch: wide })).rejects.toThrow('columns')
+    const list = fakeFetch([{ match: () => true, text: JSON.stringify({ data: { prices: Array.from({ length: 100_001 }, () => ({})) } }) }]).fetch
+    await expect(customHistory(source(), 'X1', '2026-10-01', '2026-10-26', { fetch: list })).rejects.toThrow('more than 100,000 rows')
+  })
+
+  it('skips a timestamp out of range instead of failing the whole answer', () => {
+    expect(parseDate(1e13, 'unix')).toBeUndefined()
+    expect(parseDate('99999999999999999', 'unixms')).toBeUndefined()
+  })
+
+  it('never reports a close that rounds to zero after the unit division', async () => {
+    const s = source({ currency: 'GBp' })
+    const { fetch } = fakeFetch([{ match: () => true, body: { data: { prices: [{ day: '2026-10-23', nav: 5e-324 }, { day: '2026-10-24', nav: 250 }] } } }])
+    expect((await customHistory(s, 'X1', '2026-10-01', '2026-10-26', { fetch })).prices).toEqual([{ date: '2026-10-24', close: 2.5 }])
+  })
+
+  it('never repeats a header name in its errors', () => {
+    const result = parseCustomSource({ ...source(), headers: { 'sk-live-0123456789abcdef': '{APIKEY}' } })
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.errors.join(' ')).not.toContain('sk-live')
+  })
+
+  it('strips format characters from names and never leaves half a character', () => {
+    const hidden = [0x200e, 0x200f, 0x061c, 0x2060, 0x200b, 0x2028, 0xe0041].map((c) => String.fromCodePoint(c)).join('')
+    expect(parseCustomSource({ ...source(), name: `Fund${hidden} A` }).ok && (parseCustomSource({ ...source(), name: `Fund${hidden} A` }) as { source: CustomSource }).source.name).toBe('Fund A')
+    const emoji = String.fromCodePoint(0x1f4c8)
+    const long = `${'a'.repeat(39)}${emoji}${emoji}`
+    const name = (parseCustomSource({ ...source(), name: long }) as { source: CustomSource }).source.name
+    expect(Array.from(name)).toHaveLength(40)
+    expect(name.endsWith(emoji)).toBe(true)
   })
 })

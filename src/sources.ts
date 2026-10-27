@@ -1,6 +1,7 @@
 import { browser } from 'wxt/browser'
 import { setKey } from './keys'
-import { parseCustomSource, templateHost, type CustomSource } from './shared/custom/definition.js'
+import { PROVIDER_HOSTS } from './manifest'
+import { parseCustomSource, templateHost, usesKey, type CustomSource } from './shared/custom/definition.js'
 import { CUSTOM_ID_RE, LIMITS, PROVIDER_IDS } from './shared/protocol/types.js'
 
 /**
@@ -30,16 +31,46 @@ export async function saveCustomSource(source: CustomSource): Promise<void> {
   await browser.storage.local.set({ [STORAGE_KEY]: sources })
 }
 
-/** Remove a source and its key, and give back the site permission no other source still needs. */
+/** Remove a source and its key, and give back any site permission no source still needs. */
 export async function removeCustomSource(id: string): Promise<void> {
-  const sources = await getCustomSources()
-  const removed = sources.find((s) => s.id === id)
-  const remaining = sources.filter((s) => s.id !== id)
+  const remaining = (await getCustomSources()).filter((s) => s.id !== id)
   await browser.storage.local.set({ [STORAGE_KEY]: remaining })
   await setKey(id, '')
-  if (removed && !remaining.some((s) => hostOf(s) === hostOf(removed))) {
-    await browser.permissions.remove({ origins: [sitePattern(removed)] }).catch(() => false)
-  }
+  await reconcileSitePermissions()
+}
+
+/**
+ * Give back every site permission no saved source needs: one granted for a Try that was then
+ * cancelled, or for a site a source moved away from. The four provider APIs are never touched.
+ */
+export async function reconcileSitePermissions(): Promise<void> {
+  const granted = (await browser.permissions.getAll()).origins ?? []
+  const needed = new Set((await getCustomSources()).map(sitePattern))
+  const required = new Set<string>(PROVIDER_HOSTS)
+  const extra = granted.filter((origin) => !required.has(origin) && !needed.has(origin))
+  if (extra.length > 0) await browser.permissions.remove({ origins: extra }).catch(() => false)
+}
+
+/**
+ * Which key a source being saved or tried should use. A saved key stays with its site: when the
+ * address moves to another site, the key must be typed again, so it is never sent somewhere new
+ * on its own.
+ */
+export function keyDecision(
+  existing: CustomSource | undefined,
+  next: CustomSource,
+  typed: string,
+): 'typed' | 'saved' | 'none' | 'retype' | 'missing' {
+  if (typed.trim()) return 'typed'
+  if (existing && hostOf(existing) === hostOf(next)) return 'saved'
+  if (usesKey(next)) return existing ? 'retype' : 'missing'
+  return 'none'
+}
+
+/** What to tell the user when keyDecision says a key has to be typed. */
+export const KEY_NEEDED: Readonly<Record<'retype' | 'missing', string>> = {
+  retype: 'The address moved to another site: type the key again.',
+  missing: 'The address or a header uses {KEY}: type the key.',
 }
 
 /** The host name a source talks to, without a port. */

@@ -49,8 +49,10 @@ const URL_MAX = 500
 const PATH_MAX = 120
 const HEADER_MAX = 5
 const HEADER_NAME_RE = /^[A-Za-z0-9-]{1,64}$/
-// Headers a source may not set: they belong to the browser or would change where a request goes.
-const FORBIDDEN_HEADERS = /^(host|cookie|cookie2|origin|referer|content-length|connection|keep-alive|transfer-encoding|upgrade|te|trailer|expect|proxy-.*|sec-.*)$/i
+// Headers a source may not set: they belong to the browser, would change where or how a request
+// goes, or are ones a browser drops (so the extension and the bridge would differ).
+const FORBIDDEN_HEADERS =
+  /^(host|cookie|cookie2|set-cookie|origin|referer|content-length|content-type|connection|keep-alive|transfer-encoding|upgrade|te|trailer|expect|date|dnt|via|accept-charset|accept-encoding|access-control-.*|forwarded|x-forwarded-.*|x-original-url|x-rewrite-url|x-http-method|x-http-method-override|x-method-override|proxy-.*|sec-.*)$/i
 const UNSAFE_PATH_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor'])
 const PLACEHOLDER_RE = /\{([^{}]*)\}/g
 // eslint-disable-next-line no-control-regex
@@ -97,6 +99,11 @@ function checkPath(label: string, path: string | undefined, errors: string[], re
 }
 
 function checkTemplate(url: string, errors: string[], placeholdersAllowed: readonly string[], label: string): void {
+  // A percent sign before a placeholder would let the filled-in value finish an escape like %2e.
+  if (url.includes('%{')) {
+    errors.push(`${label} has a % right before a placeholder.`)
+    return
+  }
   for (const match of url.matchAll(PLACEHOLDER_RE)) {
     if (!placeholdersAllowed.includes(match[1] ?? '')) {
       errors.push(`${label} uses an unknown placeholder. Use ${placeholdersAllowed.map((p) => `{${p}}`).join(', ')}.`)
@@ -186,18 +193,20 @@ export function parseCustomSource(input: unknown): ParseResult {
     } else {
       const entries = Object.entries(raw.headers as Record<string, unknown>)
       if (entries.length > HEADER_MAX) errors.push(`At most ${HEADER_MAX} headers.`)
-      for (const [headerName, value] of entries.slice(0, HEADER_MAX)) {
+      // Headers are named by position, never by name: a key pasted as a name must not be repeated.
+      entries.slice(0, HEADER_MAX).forEach(([headerName, value], index) => {
+        const label = `Header ${index + 1}`
         if (!HEADER_NAME_RE.test(headerName) || FORBIDDEN_HEADERS.test(headerName)) {
-          errors.push('A header name is not allowed: use letters, digits and dashes, and not Host, Cookie, Origin or similar.')
-          continue
+          errors.push(`${label} has a name that is not allowed: use letters, digits and dashes, and not Host, Cookie, Origin or similar.`)
+          return
         }
         if (typeof value !== 'string' || value.length > URL_MAX || CONTROL_RE.test(value)) {
-          errors.push(`The ${headerName} header value must be one line up to ${URL_MAX} characters.`)
-          continue
+          errors.push(`${label} must have a value of one line up to ${URL_MAX} characters.`)
+          return
         }
-        checkTemplate(value, errors, ['KEY'], `The ${headerName} header`)
+        checkTemplate(value, errors, ['KEY'], label)
         headers[headerName] = value
-      }
+      })
     }
   }
 

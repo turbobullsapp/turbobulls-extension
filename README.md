@@ -23,8 +23,9 @@ Chrome and Edge. For Firefox, or if you prefer a program to an extension, use
 - **Only `https://app.turbobulls.com` can talk to it** (`externally_connectable`). Chrome does not
   even show the extension to other websites, and the extension checks again that the sender is the
   app's own page, not a frame or a sandboxed page.
-- **It never accepts a web address to fetch.** The app can only ask for a search or for prices
-  from one of the four providers, so the extension cannot be used to reach anything else.
+- **The app can never send it a web address.** The app can only ask for a search or for prices
+  from one of the four providers or a source you added yourself on the settings page, so the
+  extension cannot be used to reach anything else. It never follows a redirect.
 - **Your key is sent only to its own provider**, in a header where the provider accepts one, never
   follows a redirect elsewhere, and never appears in an answer, a message or a log.
 
@@ -58,8 +59,9 @@ date format, the currency, and a key if the source needs one. **Try it** fetches
 and shows what it read, or why nothing matched.
 
 In Turbobulls, the source appears among your data providers. It has no search: you type the symbol
-(the source's settings can say what to type, like "Fund code"). Use only sources whose terms allow
-this use. The settings mirror the bridge's config format, described in the
+(the source's settings can say what to type, like "Fund code"). Turbobulls sees the source's name,
+never its address or key. The extension never follows a redirect, so give it the address the data
+finally comes from. Use only sources whose terms allow this use. The settings mirror the bridge's config format, described in the
 [turbobulls-bridge README](https://github.com/turbobullsapp/turbobulls-bridge#custom-sources).
 
 ## How it works

@@ -4,15 +4,16 @@ import { isValidSymbol } from './protocol/validate.js'
 /** Longest text a search result field may carry to the app. */
 export const TEXT_MAX = 200
 
-// Control characters and the bidirectional overrides that can make text display out of order.
-// eslint-disable-next-line no-control-regex
-const UNSAFE_CHARS = /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g
+// Control and format characters (bidirectional overrides, zero-width marks, tag characters) and
+// line separators: they can make text display out of order or hide part of it.
+const UNSAFE_CHARS = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu
 const ISO_CURRENCY = /^[A-Z]{3}$/
 const ISIN = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/
 
 export function cleanText(value: string | undefined, max: number = TEXT_MAX): string | undefined {
   if (value === undefined) return undefined
-  const cleaned = value.replace(UNSAFE_CHARS, '').trim().slice(0, max).trim()
+  // Cut by code point, so no half of a two-part character is left at the end.
+  const cleaned = Array.from(value.replace(UNSAFE_CHARS, '').trim()).slice(0, max).join('').trim()
   return cleaned.length > 0 ? cleaned : undefined
 }
 

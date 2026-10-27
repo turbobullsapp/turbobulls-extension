@@ -12,8 +12,8 @@ export interface HttpResponseLike {
 
 /**
  * A fetch the caller passes in: global fetch in Node 22+ and in an extension service worker.
- * Requests never carry cookies (`credentials: 'omit'`), and follow redirects only when no key is
- * involved (`redirect: 'follow'` is used for keyless custom sources alone).
+ * Requests never carry cookies (`credentials: 'omit'`) and never follow a redirect
+ * (`redirect: 'error'`): a request goes to the address that was built, and nowhere else.
  */
 export type FetchLike = (
   url: string,
@@ -21,7 +21,7 @@ export type FetchLike = (
     method: 'GET'
     headers: Record<string, string>
     signal: AbortSignal
-    redirect: 'error' | 'follow'
+    redirect: 'error'
     credentials: 'omit'
   },
 ) => Promise<HttpResponseLike>

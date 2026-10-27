@@ -5,8 +5,9 @@ import { join } from 'node:path'
 
 const ROOTS = process.argv.slice(2).length > 0 ? process.argv.slice(2) : ['src']
 const EXTENSIONS = /\.(ts|tsx|js|mjs|html|css|json)$/
-// Bidirectional controls, zero-width characters, the BOM, and the no-break spaces that look like spaces.
-const FORBIDDEN = /[\u202a-\u202e\u2066-\u2069\u200b-\u200f\u2028\u2029\ufeff\u00a0\u202f\u2007\u2009]/u
+// Bidirectional controls, zero-width and invisible characters (some are valid in variable names),
+// the BOM, tag characters, and the no-break spaces that look like spaces.
+const FORBIDDEN = /[\u202a-\u202e\u2066-\u2069\u200b-\u200f\u2028\u2029\ufeff\u00a0\u202f\u2007\u2009\u2060-\u2064\u180e\u3164\u115f\u1160\uffa0\u{e0000}-\u{e007f}]/u
 
 function* files(dir) {
   for (const name of readdirSync(dir)) {

@@ -30,9 +30,10 @@ export function finalizeSeries(
   for (const row of rows) {
     const date = typeof row.date === 'string' ? row.date.slice(0, 10) : undefined
     if (!isIsoDate(date) || date < opts.from || date > opts.to) continue
-    const close = toNumber(row.close)
+    const close = tidy(toNumber(row.close) / opts.divisor)
+    // Checked after dividing: a tiny close in pence must not become a price of zero.
     if (!Number.isFinite(close) || close <= 0) continue
-    byDate.set(date, tidy(close / opts.divisor))
+    byDate.set(date, close)
   }
   const points = [...byDate.entries()]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))

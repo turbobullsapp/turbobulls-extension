@@ -17,21 +17,25 @@ into an issue, even a revoked one.
 - **It cannot be used as a proxy.** No message carries a URL. The extension builds each provider
   request itself, for the four provider APIs and the sources you added on its settings page; the
   app can only name a source, never add one or change its address. A symbol is encoded and can
-  never change the host. Redirects are never followed for a request that carries a key, so a key
-  cannot be carried to another host, and the extension stops reading any answer past a size limit.
-  No request ever sends cookies.
+  never change the host or climb out of the address's path. Redirects are never followed, so a
+  request, and any key or header in it, cannot be carried to another host. The extension stops
+  reading any answer past a size limit and refuses answers with too many rows. No request ever
+  sends cookies.
 - **Your own sources reach only the sites you allowed.** The manifest can ask for `https://` sites
   only as optional permissions, one site at a time, when you save a source; Chrome asks you first.
-  Before each request the extension checks that the site is still allowed, and removing a source
-  gives back a site no other source uses. A site permission lets the extension fetch from that
-  site; it still cannot read or change any page.
+  Before each request the extension checks that the site is still allowed. Sites no saved source
+  needs (one allowed for a Try that was never saved, or one a source moved away from) are given back
+  whenever sources change and whenever the settings page opens. A saved key stays with its site: a
+  source moved to another site needs its key typed again. A site permission lets the extension
+  fetch from that site; it still cannot read or change any page.
 - **Your keys stay in your browser.** They live in `storage.local`: this device only, never
   synced, readable only by this extension. A key is sent only to its own provider, as a header
   where the provider accepts one (EODHD, Twelve Data, Finnhub). Alpha Vantage only accepts it in
   the address, which the extension never logs or reports. Keys never appear in answers to the app,
   in error messages or in logs.
 - **Turbobulls learns nothing.** The extension never contacts Turbobulls. The app only sends it a
-  provider name, a symbol and dates, never portfolio data.
+  provider name, a symbol and dates, never portfolio data. The app sees the names you give your own
+  sources, never their addresses or keys.
 
 ## What it cannot protect against
 

@@ -20,6 +20,8 @@ const DEFAULT_TIMEOUT_MS = 30_000
 export const SMALL_ANSWER_BYTES = 1024 * 1024
 /** Largest answer read for a price history (a 20,000-day series is a few megabytes). */
 export const HISTORY_ANSWER_BYTES = 10 * 1024 * 1024
+/** Largest answer read from a custom source: plenty for daily prices, and bounded for parsing. */
+export const CUSTOM_ANSWER_BYTES = 4 * 1024 * 1024
 
 const MAX_RETRY_AFTER = 86_400
 
@@ -64,17 +66,16 @@ async function readText(res: HttpResponseLike, maxBytes: number, providerName: s
 
 export interface GetOptions {
   maxBytes?: number
-  /** 'follow' only for a request that carries no key; the default refuses redirects. */
-  redirect?: 'error' | 'follow'
   accept?: string
+  /** What to say when the address cannot be reached (a network failure, or a refused redirect). */
+  unreachable?: string
 }
 
 /**
- * GET a URL and read the answer as text. Redirects are refused unless the caller says the request
- * carries no key: a key travels only to the host it was built for, never to wherever a redirect
- * points. No cookies are ever sent. Network failures and timeouts become a PROVIDER_ERROR that
- * names the source only, never the URL, which can carry a key for sources that only accept it as a
- * query parameter.
+ * GET a URL and read the answer as text. Redirects are always refused: a request, and any key in
+ * it, goes only to the address that was built, never to wherever a redirect points. No cookies are
+ * ever sent. Network failures and timeouts become a PROVIDER_ERROR that names the source only,
+ * never the URL, which can carry a key for sources that only accept it as a query parameter.
  */
 export async function getText(
   ctx: ProviderContext,
@@ -90,7 +91,7 @@ export async function getText(
       method: 'GET',
       headers: { Accept: options.accept ?? 'application/json', ...headers },
       signal: controller.signal,
-      redirect: options.redirect ?? 'error',
+      redirect: 'error',
       credentials: 'omit',
     })
     if (res.status >= 300 && res.status < 400) {
@@ -103,7 +104,7 @@ export async function getText(
     if (controller.signal.aborted) {
       throw new ConnectorError('PROVIDER_ERROR', `${providerName} did not answer in time.`)
     }
-    throw new ConnectorError('PROVIDER_ERROR', `Could not reach ${providerName}. Check the internet connection.`)
+    throw new ConnectorError('PROVIDER_ERROR', options.unreachable ?? `Could not reach ${providerName}. Check the internet connection.`)
   } finally {
     clearTimeout(timer)
   }

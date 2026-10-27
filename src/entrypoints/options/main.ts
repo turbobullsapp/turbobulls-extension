@@ -4,7 +4,7 @@ import { linkAssetUrl } from '../../origins'
 import { dispatch } from '../../shared/dispatch.js'
 import { PROVIDER_IDS, type ProviderId } from '../../shared/protocol/types.js'
 import { ADAPTERS } from '../../shared/providers/registry.js'
-import { getCustomSources } from '../../sources'
+import { getCustomSources, reconcileSitePermissions } from '../../sources'
 import { el, setStatus } from './dom'
 import { renderSources } from './sources-ui'
 
@@ -107,6 +107,8 @@ async function main() {
   const container = document.getElementById('providers')
   const sources = document.getElementById('sources')
   if (!container || !sources) return
+  // Give back any site left granted by a Try that was never saved (the page may have been closed).
+  await reconcileSitePermissions().catch(() => undefined)
   const hints = await keyHints()
   container.replaceChildren(...PROVIDER_IDS.map((p) => renderProvider(p, hints[p])))
   await renderSources(sources, () => void refreshNextStep())

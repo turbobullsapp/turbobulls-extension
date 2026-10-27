@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeBrowser } from 'wxt/testing/fake-browser'
 import { getKey, setKey } from './keys'
 import { parseCustomSource, type CustomSource } from './shared/custom/definition.js'
-import { canReach, getCustomSources, hostOf, newSourceId, removeCustomSource, saveCustomSource, sitePattern } from './sources'
+import { canReach, getCustomSources, hostOf, keyDecision, newSourceId, reconcileSitePermissions, removeCustomSource, saveCustomSource, sitePattern } from './sources'
 
 function source(id: string, url = 'https://api.example.com/nav/{SYMBOL}'): CustomSource {
   const result = parseCustomSource({ id, name: `Source ${id}`, url, format: 'json', json: { items: '', close: 'close' }, currency: 'EUR' })
@@ -37,7 +37,12 @@ describe('custom sources in extension storage', () => {
   })
 
   it('removes a source with its key, and gives back a site no other source uses', async () => {
-    const remove = vi.spyOn(fakeBrowser.permissions, 'remove').mockResolvedValue(true as never)
+    const granted = new Set(['https://eodhd.com/*', 'https://api.example.com/*', 'https://data.example.org/*'])
+    vi.spyOn(fakeBrowser.permissions, 'getAll').mockImplementation((async () => ({ origins: [...granted], permissions: [] })) as never)
+    const remove = vi.spyOn(fakeBrowser.permissions, 'remove').mockImplementation((async ({ origins }: { origins: string[] }) => {
+      for (const o of origins) granted.delete(o)
+      return true
+    }) as never)
     await saveCustomSource(source('one'))
     await saveCustomSource(source('two'))
     await saveCustomSource(source('other', 'https://data.example.org/{SYMBOL}.csv'))
@@ -48,6 +53,38 @@ describe('custom sources in extension storage', () => {
     await removeCustomSource('two')
     expect(remove).toHaveBeenCalledWith({ origins: ['https://api.example.com/*'] })
     expect((await getCustomSources()).map((s) => s.id)).toEqual(['other'])
+    expect([...granted]).toEqual(['https://eodhd.com/*', 'https://data.example.org/*'])
+  })
+
+  it('gives back sites granted for a Try that was never saved, and never a provider API', async () => {
+    vi.spyOn(fakeBrowser.permissions, 'getAll').mockImplementation(
+      (async () => ({ origins: ['https://finnhub.io/*', 'https://tried.example.com/*', 'https://api.example.com/*'], permissions: [] })) as never,
+    )
+    const remove = vi.spyOn(fakeBrowser.permissions, 'remove').mockResolvedValue(true as never)
+    await saveCustomSource(source('kept'))
+    await reconcileSitePermissions()
+    expect(remove).toHaveBeenCalledWith({ origins: ['https://tried.example.com/*'] })
+  })
+
+  it('keeps custom source keys apart from provider keys', async () => {
+    await setKey('mysource', 'custom-secret')
+    await setKey('eodhd', 'provider-secret')
+    expect(await fakeBrowser.storage.local.get(null)).toEqual({ 'customkey:mysource': 'custom-secret', 'key:eodhd': 'provider-secret' })
+    expect(await getKey('mysource')).toBe('custom-secret')
+  })
+
+  it('makes a saved key stay with its site', () => {
+    const keyed = (url: string) => {
+      const r = parseCustomSource({ id: 'kk', name: 'K', url, format: 'json', json: { items: '', close: 'close' }, currency: 'EUR', headers: { 'X-Api-Key': '{KEY}' } })
+      if (!r.ok) throw new Error(r.errors.join(' '))
+      return r.source
+    }
+    const before = keyed('https://a.example.com/{SYMBOL}')
+    expect(keyDecision(before, keyed('https://a.example.com/v2/{SYMBOL}'), '')).toBe('saved')
+    expect(keyDecision(before, keyed('https://b.example.com/{SYMBOL}'), '')).toBe('retype')
+    expect(keyDecision(before, keyed('https://b.example.com/{SYMBOL}'), 'new-key')).toBe('typed')
+    expect(keyDecision(undefined, keyed('https://b.example.com/{SYMBOL}'), '')).toBe('missing')
+    expect(keyDecision(undefined, source('nokey'), '')).toBe('none')
   })
 
   it('asks the browser whether it may reach a site, by host and without the port', async () => {
