@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Prices from your own market-data subscription, for <a href="https://turbobulls.com">Turbobulls</a>.</strong><br>
-  A browser extension for Chrome and Edge. Your API key stays in your browser.
+  A browser extension for Chrome and Edge. Your key goes only to your provider, and Turbobulls cannot read your data.
 </p>
 
 <p align="center">
@@ -32,6 +32,12 @@ does not cover with that provider's data: a fund, a small exchange, a listing no
 The app asks the extension, the extension asks your provider with your own key, and only the daily
 prices come back.
 
+> [!NOTE]
+> **Nobody else sees your key or your data.** Your API key stays in this browser and goes only to
+> your provider. Turbobulls never receives it and cannot read your data: the prices, and which
+> assets you price, are saved end-to-end encrypted with the rest of your portfolio. See
+> [who sees what](#who-sees-what) below.
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/settings-dark.png">
@@ -43,6 +49,8 @@ prices come back.
 
 - **Your key never leaves your browser.** It is kept on this device only, never synced, and sent
   only to its own provider.
+- **Turbobulls cannot read your data.** The prices, and which assets you price, are saved
+  end-to-end encrypted with the rest of your portfolio.
 - **No access to web pages.** No content scripts and no access to your tabs, Turbobulls included.
 - **One website only.** Only `https://app.turbobulls.com` can talk to the extension, and only from
   the page itself, never from a frame.
@@ -55,7 +63,7 @@ prices come back.
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/how-it-works-dark.png">
-    <img src="docs/images/how-it-works-light.png" width="960" alt="How it works: Turbobulls, open in your browser, asks the Turbobulls Connector extension for a symbol and dates. The Connector asks your data provider, with your API key, which stays on your computer. The provider sends the daily prices back to the Connector, which passes them to Turbobulls, where they are saved encrypted.">
+    <img src="docs/images/how-it-works-light.png" width="960" alt="How it works: Turbobulls, open in your browser, asks the Turbobulls Connector extension for a symbol and dates. The Connector asks your data provider, with your API key, which stays on your computer. The provider sends the daily prices back to the Connector, which passes them to Turbobulls. Turbobulls saves them end-to-end encrypted: its servers never get your API key and cannot read your data.">
   </picture>
 </p>
 
@@ -99,6 +107,19 @@ What you can price depends on your plan with the provider.
 | [A source of your own](#your-own-sources) | Anything an `https://` address returns as JSON or CSV | No search: you type the symbol |
 
 ## Privacy and security
+
+### Who sees what
+
+| | Your API key | Which assets you price | Your prices and portfolio |
+|---|---|---|---|
+| **Turbobulls' servers** | Never receive it | Cannot see them: stored encrypted | Cannot read them: stored encrypted |
+| **This extension** | Keeps it on this device, and sends it only to your provider | Only the ones Turbobulls asks it to fetch | Passes the prices on; cannot read your portfolio |
+| **Your data provider** | Checks it, as on any call to its API | Each symbol it is asked for | Sends the prices; never sees your portfolio |
+
+The Turbobulls app decrypts your data in your browser, on your device: your portfolio and the
+prices leave it only end-to-end encrypted.
+
+### What the extension can do
 
 The extension asks for as little as it can:
 
@@ -157,6 +178,14 @@ The settings mirror the Connector app's config format, described in full in
 
 No. The key stays in the extension's storage on this device and is sent only to its own provider.
 The app receives prices, never the key.
+</details>
+
+<details>
+<summary><strong>Can Turbobulls see which assets I price, or the prices?</strong></summary>
+
+No. The link to your provider and the prices it sends are saved in your workspace with the rest of
+your portfolio, end-to-end encrypted. Turbobulls' servers store them as ciphertext and cannot read
+them.
 </details>
 
 <details>
