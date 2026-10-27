@@ -9,6 +9,7 @@ import { isProviderId, requestIdOf, validateRequest } from './protocol/validate.
 import { createLimiter } from './providers/limiter.js'
 import { ADAPTERS, MIN_GAP_MS, providerInfo } from './providers/registry.js'
 import type { FetchLike, ProviderContext } from './providers/types.js'
+import { keyFingerprint, type RefusalMemory } from './refusals.js'
 import { sanitizeSearchResult } from './sanitize.js'
 
 export interface DispatchDeps {
@@ -26,6 +27,11 @@ export interface DispatchDeps {
   canReach?: (origin: string) => boolean | Promise<boolean>
   /** Opens the connector's own settings. Left out by connectors that have none to open. */
   openSettings?: () => void | Promise<void>
+  /**
+   * Remembers provider refusals across requests (see createRefusalMemory). Connectors keep one for
+   * the app's requests; a settings page testing a key leaves it out.
+   */
+  refusals?: RefusalMemory
   now?: () => Date
   timeoutMs?: number
 }
@@ -100,7 +106,7 @@ export async function dispatch(input: unknown, deps: DispatchDeps): Promise<Conn
         }
         key = await builtInKey(provider, deps)
         const ctx = context(key, deps)
-        const raw = await limiterFor(provider)(() => ADAPTERS[provider].search(query, ctx))
+        const raw = await call(provider, key, undefined, deps, () => ADAPTERS[provider].search(query, ctx))
         const results = raw.map(sanitizeSearchResult).filter((r) => r !== undefined)
         return { id, ok: true, result: { results: results.slice(0, LIMITS.searchResults) } }
       }
@@ -110,7 +116,7 @@ export async function dispatch(input: unknown, deps: DispatchDeps): Promise<Conn
         if (isProviderId(provider)) {
           key = await builtInKey(provider, deps)
           const ctx = context(key, deps)
-          const result = await limiterFor(provider)(() => ADAPTERS[provider].history(symbol, from, to, ctx))
+          const result = await call(provider, key, symbol, deps, () => ADAPTERS[provider].history(symbol, from, to, ctx))
           return { id, ok: true, result }
         }
         const source = (await customSourcesOf(deps)).find((s) => s.id === provider)
@@ -123,7 +129,7 @@ export async function dispatch(input: unknown, deps: DispatchDeps): Promise<Conn
           )
         }
         key = (await deps.getKey(provider))?.trim() || undefined
-        const result = await limiterFor(provider)(() =>
+        const result = await call(provider, key, symbol, deps, () =>
           customHistory(source, symbol, from, to, {
             fetch: deps.fetch,
             ...(key ? { key } : {}),
@@ -140,6 +146,28 @@ export async function dispatch(input: unknown, deps: DispatchDeps): Promise<Conn
       : { code: 'PROVIDER_ERROR', message: 'Something went wrong in the connector.' }
     return { id, ok: false, error: scrub(body, key) }
   }
+}
+
+/**
+ * One call to a source, in its turn, unless the provider refused the same request moments ago. The
+ * check runs again when the call's turn comes, so calls already waiting stop as soon as one of them
+ * is refused.
+ */
+async function call<T>(source: SourceId, key: string | undefined, symbol: string | undefined, deps: DispatchDeps, task: () => Promise<T>): Promise<T> {
+  const memory = deps.refusals
+  if (!memory) return limiterFor(source)(task)
+  const now = () => (deps.now ?? (() => new Date()))().getTime()
+  const keyPrint = keyFingerprint(key)
+  memory.check(source, keyPrint, symbol, now())
+  return limiterFor(source)(async () => {
+    memory.check(source, keyPrint, symbol, now())
+    try {
+      return await task()
+    } catch (e) {
+      memory.remember(source, keyPrint, symbol, e, now())
+      throw e
+    }
+  })
 }
 
 async function builtInKey(provider: keyof typeof ADAPTERS, deps: DispatchDeps): Promise<string> {

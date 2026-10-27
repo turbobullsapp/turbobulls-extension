@@ -74,7 +74,7 @@ export interface GetOptions {
 /**
  * GET a URL and read the answer as text. Redirects are always refused: a request, and any key in
  * it, goes only to the address that was built, never to wherever a redirect points. No cookies are
- * ever sent. Network failures and timeouts become a PROVIDER_ERROR that names the source only,
+ * ever sent, and nothing is kept in the HTTP cache, where an address with a key in it would linger. Network failures and timeouts become a PROVIDER_ERROR that names the source only,
  * never the URL, which can carry a key for sources that only accept it as a query parameter.
  */
 export async function getText(
@@ -93,6 +93,7 @@ export async function getText(
       signal: controller.signal,
       redirect: 'error',
       credentials: 'omit',
+      cache: 'no-store',
     })
     if (res.status >= 300 && res.status < 400) {
       throw new ConnectorError('PROVIDER_ERROR', `${providerName} answered with a redirect, which the connector does not follow.`)
@@ -147,15 +148,15 @@ export function clampRetryAfter(seconds: number): number {
 }
 
 /**
- * One URL path segment from user input. encodeURIComponent leaves dots alone, and a segment of
- * only dots would make the URL climb out of the provider's API path.
+ * One URL path segment from user input. A segment of only dots would make the URL climb out of the
+ * provider's API path, and so could a slash: encoded as %2F, it is still decoded back to a slash by
+ * some servers before they route the request. Both are refused.
  */
 export function pathSegment(value: string): string {
-  const encoded = encodeURIComponent(value)
-  if (encoded === '' || /^\.+$/.test(encoded)) {
+  if (value === '' || /^\.+$/.test(value) || /[/\\]/.test(value)) {
     throw new ConnectorError('BAD_REQUEST', 'That value cannot be sent to the provider.')
   }
-  return encoded
+  return encodeURIComponent(value)
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

@@ -18,6 +18,7 @@ export interface RecordedCall {
   headers: Record<string, string>
   redirect: string
   credentials: string
+  cache: string
 }
 
 /**
@@ -28,7 +29,7 @@ export function fakeFetch(routes: FakeRoute[]): { fetch: FetchLike; calls: Recor
   const calls: RecordedCall[] = []
   const fetch: FetchLike = async (url, init) => {
     const parsed = new URL(url)
-    calls.push({ url: parsed, headers: init.headers, redirect: init.redirect, credentials: init.credentials })
+    calls.push({ url: parsed, headers: init.headers, redirect: init.redirect, credentials: init.credentials, cache: init.cache })
     const route = routes.find((r) => r.match(parsed))
     if (!route) throw new Error(`fake fetch has no route for ${parsed.origin}${parsed.pathname}`)
     const status = route.status ?? 200

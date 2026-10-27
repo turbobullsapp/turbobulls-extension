@@ -99,9 +99,10 @@ function checkPath(label: string, path: string | undefined, errors: string[], re
 }
 
 function checkTemplate(url: string, errors: string[], placeholdersAllowed: readonly string[], label: string): void {
-  // A percent sign before a placeholder would let the filled-in value finish an escape like %2e.
-  if (url.includes('%{')) {
-    errors.push(`${label} has a % right before a placeholder.`)
+  // A percent sign must start a whole escape like %20: a stray one before a placeholder would let
+  // the filled-in value finish it (% then 2e is a dot, and %2 then F a slash).
+  if (/%(?![0-9A-Fa-f]{2})/.test(url)) {
+    errors.push(`${label} has a % that does not start an escape like %20.`)
     return
   }
   for (const match of url.matchAll(PLACEHOLDER_RE)) {

@@ -88,6 +88,27 @@ describe('twelvedata.history', () => {
     expect(answer.prices[answer.prices.length - 1]).toEqual({ date: '2026-10-23', close: 100 })
   })
 
+  it('stops after the pages the protocol can return, so a long history never spends more credits', async () => {
+    // Every page is full, as for a symbol with a very long history. `match` runs once per request.
+    let served = -1
+    const { fetch, calls } = fakeFetch([
+      {
+        match: (url) => url.pathname === '/time_series' && ++served >= 0,
+        get body() {
+          const start = 5000 * served
+          const values = Array.from({ length: 5000 }, (_, i) => ({
+            datetime: new Date(Date.UTC(2026, 9, 23) - (start + i) * 86_400_000).toISOString().slice(0, 10),
+            close: '10',
+          }))
+          return { meta: { currency: 'USD' }, values, status: 'ok' }
+        },
+      },
+    ])
+    const answer = await twelvedata.history('AAPL:NASDAQ', '1900-01-01', '2026-10-23', ctx(fetch))
+    expect(calls).toHaveLength(4)
+    expect(answer.prices).toHaveLength(20_000)
+  })
+
   it('treats "no data is available" as an empty range', async () => {
     const { fetch } = fakeFetch([
       { match: path('/time_series'), body: { code: 400, message: 'No data is available on the specified dates. Try setting different start/end dates.', status: 'error' } },

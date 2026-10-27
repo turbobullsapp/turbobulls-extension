@@ -13,7 +13,8 @@ export interface HttpResponseLike {
 /**
  * A fetch the caller passes in: global fetch in Node 22+ and in an extension service worker.
  * Requests never carry cookies (`credentials: 'omit'`) and never follow a redirect
- * (`redirect: 'error'`): a request goes to the address that was built, and nowhere else.
+ * (`redirect: 'error'`): a request goes to the address that was built, and nowhere else. Nothing is
+ * kept in the HTTP cache (`cache: 'no-store'`), since an address can hold a key.
  */
 export type FetchLike = (
   url: string,
@@ -23,6 +24,7 @@ export type FetchLike = (
     signal: AbortSignal
     redirect: 'error'
     credentials: 'omit'
+    cache: 'no-store'
   },
 ) => Promise<HttpResponseLike>
 

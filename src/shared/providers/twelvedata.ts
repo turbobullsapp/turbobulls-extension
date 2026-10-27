@@ -9,7 +9,8 @@ import type { ProviderAdapter, ProviderContext } from './types.js'
 const NAME = 'Twelve Data'
 const BASE = 'https://api.twelvedata.com'
 const PAGE_SIZE = 5000
-const MAX_PAGES = 10
+/** Enough pages for the longest history the protocol returns; any more would only spend credits. */
+const MAX_PAGES = Math.ceil(LIMITS.historyPoints / PAGE_SIZE)
 
 function headers(ctx: ProviderContext): Record<string, string> {
   // Twelve Data accepts the key in a header, so it never sits in a URL.

@@ -97,7 +97,10 @@ interface EodhdSearchItem {
 async function searchRaw(query: string, ctx: ProviderContext, exchange?: string): Promise<EodhdSearchItem[]> {
   const params = new URLSearchParams({ fmt: 'json', limit: String(LIMITS.searchResults) })
   if (exchange) params.set('exchange', exchange)
-  const res = await getJson(ctx, NAME, `${BASE}/search/${pathSegment(query)}?${params}`, headers(ctx))
+  // The query sits in the path, where a slash would start a new step: search the words around it.
+  const words = query.replace(/[/\\]+/g, ' ').trim()
+  if (words === '') return []
+  const res = await getJson(ctx, NAME, `${BASE}/search/${pathSegment(words)}?${params}`, headers(ctx))
   const err = failure(res, ctx.now?.() ?? new Date())
   if (err) throw err
   if (!Array.isArray(res.body)) throw new ConnectorError('PROVIDER_ERROR', 'EODHD sent an answer this connector does not understand.')

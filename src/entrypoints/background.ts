@@ -4,6 +4,7 @@ import { createExternalHandler } from '../external'
 import { getKey } from '../keys'
 import { allowedOrigins } from '../origins'
 import { markPricesSent } from '../progress'
+import { createRefusalMemory } from '../shared/refusals.js'
 import { canReach, getCustomSources } from '../sources'
 
 export default defineBackground(() => {
@@ -17,6 +18,7 @@ export default defineBackground(() => {
       canReach,
       fetch: (url, init) => fetch(url, init),
       openSettings: () => browser.runtime.openOptionsPage(),
+      refusals: createRefusalMemory(),
     },
     onPricesSent: () => markPricesSent(),
   })

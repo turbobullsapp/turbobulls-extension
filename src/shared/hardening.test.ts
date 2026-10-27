@@ -28,6 +28,7 @@ describe('redirects', () => {
     expect(err).toBeInstanceOf(ConnectorError)
     expect((err as ConnectorError).code).toBe('PROVIDER_ERROR')
     expect(calls.every((c) => c.redirect === 'error')).toBe(true)
+    expect(calls.every((c) => c.cache === 'no-store')).toBe(true)
     expect(calls.every((c) => c.url.hostname === 'finnhub.io')).toBe(true)
   })
 
@@ -132,12 +133,22 @@ describe('untrusted provider text', () => {
 })
 
 describe('URL paths', () => {
-  it('never sends a dot-only path segment', () => {
+  it('never sends a dot-only path segment, or one with a slash', () => {
     expect(() => pathSegment('..')).toThrow(ConnectorError)
     expect(() => pathSegment('.')).toThrow(ConnectorError)
     expect(() => pathSegment('')).toThrow(ConnectorError)
-    expect(pathSegment('a/../b')).toBe('a%2F..%2Fb')
+    expect(() => pathSegment('a/../b')).toThrow(ConnectorError)
+    expect(() => pathSegment('a\\b')).toThrow(ConnectorError)
     expect(pathSegment('AAPL.US')).toBe('AAPL.US')
+    expect(pathSegment('M&M.NSE')).toBe('M%26M.NSE')
+  })
+
+  it('searches EODHD for the words around a slash, so a query cannot reach another endpoint', async () => {
+    const { fetch, calls } = fakeFetch([{ match: pathStarts('/api/search/'), body: [] }])
+    await eodhd.search('x/../../eod-bulk-last-day/US', ctx(fetch))
+    await eodhd.search('BRK/B', ctx(fetch))
+    expect(await eodhd.search(' / ', ctx(fetch))).toEqual([])
+    expect(calls.map((c) => c.url.pathname)).toEqual(['/api/search/x%20..%20..%20eod-bulk-last-day%20US', '/api/search/BRK%20B'])
   })
 
   it('refuses EODHD symbols that are not code.exchange', async () => {

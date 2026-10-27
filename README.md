@@ -85,8 +85,10 @@ server at it with `NEXT_PUBLIC_CONNECTOR_EXTENSION_IDS=flnofeaegigjpjinmbhlfgaga
 builds have neither, and the production app must never list the development id: anyone can build
 an extension with it from the public key in `src/dev-key.ts`.
 
-`pnpm dev` (live reload) adds permissions WXT needs for reloading; never ship its output. Releases
-are built with `pnpm zip`, which makes store builds.
+`pnpm dev` (live reload) adds permissions WXT needs for reloading; never ship its output. The
+packages uploaded to the stores are the ones the release workflow builds from a tagged commit and
+attaches to a GitHub release. `pnpm zip` makes the same packages locally, for testing only: never
+upload a package built on your own computer.
 
 ## License
 

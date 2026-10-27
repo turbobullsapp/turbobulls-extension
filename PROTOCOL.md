@@ -146,6 +146,12 @@ source settings point.
 | `UNSUPPORTED_PROTOCOL` | The request's `v` is not one this connector speaks | Ask the user to update the connector or the app |
 | `UNSUPPORTED_OPERATION` | Unknown `op`, or `openSettings` on the bridge | Do not ask again |
 
+A connector answers `RATE_LIMITED`, `INVALID_KEY` and `PLAN_LIMIT` itself, without asking the
+provider again, while the provider's refusal still applies: a rate limit until `retryAfter` passes
+(an hour at most, with `retryAfter` still counting down to the provider's time), a refused key for
+five minutes or until the user changes it, a symbol outside the user's plan for five minutes. The
+answer is the one the provider's refusal produced.
+
 ## Symbols by provider
 
 Always pass back the `symbol` a search returned. For reference:
