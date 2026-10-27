@@ -1,94 +1,206 @@
-# Turbobulls Connector
+<p align="center">
+  <img src="public/icon/128.png" width="96" height="96" alt="Turbobulls Connector">
+</p>
 
-Prices from **your own** market-data subscription, for [Turbobulls](https://turbobulls.com).
+<h1 align="center">Turbobulls Connector</h1>
 
-If you pay for a data provider (EODHD, Twelve Data, Alpha Vantage or Finnhub), this browser
-extension lets Turbobulls price assets it does not cover with that provider's data. Your API key
-stays in your browser. Turbobulls never sees it, and never sees which symbols you look up: the app
-asks the extension, the extension asks your provider, and only the prices come back.
+<p align="center">
+  <strong>Prices from your own market-data subscription, for <a href="https://turbobulls.com">Turbobulls</a>.</strong><br>
+  A browser extension for Chrome and Edge. Your API key stays in your browser.
+</p>
 
-Chrome and Edge. For Firefox, or if you prefer a program to an extension, use
-[turbobulls-bridge](https://github.com/turbobullsapp/turbobulls-bridge) instead.
+<p align="center">
+  <a href="https://github.com/turbobullsapp/turbobulls-extension/actions/workflows/ci.yml"><img src="https://github.com/turbobullsapp/turbobulls-extension/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/browsers-Chrome%20%7C%20Edge-4285F4.svg" alt="Chrome and Edge">
+  <img src="https://img.shields.io/badge/manifest-v3-555.svg" alt="Manifest V3">
+</p>
 
-## What it can and cannot do
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#getting-started">Getting started</a> ·
+  <a href="#privacy-and-security">Privacy and security</a> ·
+  <a href="#your-own-sources">Your own sources</a> ·
+  <a href="#faq">FAQ</a> ·
+  <a href="#development">Development</a>
+</p>
 
-| Permission | Why |
-|---|---|
-| `storage` | To keep your API keys and your own sources in this browser, on this device. Never synced to your browser account. |
-| `eodhd.com`, `api.twelvedata.com`, `www.alphavantage.co`, `finnhub.io` | To call your provider's API. |
-| Optional: one `https://` site at a time | Only when you add your own source, and only for its site. Chrome asks you first; removing the source gives the permission back. |
+---
 
-- **It cannot read any web page**, Turbobulls included. It has no content scripts and no access to
-  your tabs.
-- **Only `https://app.turbobulls.com` can talk to it** (`externally_connectable`). Chrome does not
-  even show the extension to other websites, and the extension checks again that the sender is the
-  app's own page, not a frame or a sandboxed page.
-- **The app can never send it a web address.** The app can only ask for a search or for prices
-  from one of the four providers or a source you added yourself on the settings page, so the
-  extension cannot be used to reach anything else. It never follows a redirect.
-- **Your key is sent only to its own provider**, in a header where the provider accepts one, never
-  follows a redirect elsewhere, and never appears in an answer, a message or a log.
+If you pay for a market-data provider, the Turbobulls Connector lets Turbobulls price the assets it
+does not cover with that provider's data: a fund, a small exchange, a listing no free feed carries.
+The app asks the extension, the extension asks your provider with your own key, and only the daily
+prices come back.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/settings-dark.png">
+    <img src="docs/images/settings-light.png" width="720" alt="The Turbobulls Connector settings page: setup in three steps and your API keys">
+  </picture>
+</p>
+
+## Highlights
+
+- **Your key never leaves your browser.** It is kept on this device only, never synced, and sent
+  only to its own provider.
+- **No access to web pages.** No content scripts and no access to your tabs, Turbobulls included.
+- **One website only.** Only `https://app.turbobulls.com` can talk to the extension, and only from
+  the page itself, never from a frame.
+- **Four providers built in**, plus any `https://` source of your own that answers JSON or CSV.
+- **Small and auditable.** Open source, and the store packages are built from tagged commits by a
+  public release workflow.
+
+## How it works
+
+```mermaid
+flowchart LR
+    app["Turbobulls app<br/>app.turbobulls.com"]
+    ext["Turbobulls Connector<br/>in your browser"]
+    provider["Your data provider<br/>or a source of your own"]
+    app -- "symbol and dates" --> ext
+    ext -- "request, with your key" --> provider
+    provider -- "daily prices" --> ext
+    ext -- "daily prices" --> app
+```
+
+The app and the extension speak a small, documented protocol (`hello`, `search`, `history` and
+`openSettings`); see [PROTOCOL.md](PROTOCOL.md). Turbobulls keeps the prices in your workspace,
+end-to-end encrypted, so your other devices (your phone included) receive them with the app's
+normal sync, without an extension of their own.
 
 ## Install
 
-From the Chrome Web Store (Chrome and Edge), once the listing is live. The Turbobulls app talks
-only to the store version: a copy loaded by hand gets a different extension id, which the app does
-not know, and that is on purpose (the app must never trust an id anyone could claim).
+| Browser | Get it |
+|---|---|
+| Google Chrome | Chrome Web Store (listing coming soon) |
+| Microsoft Edge | Edge Add-ons (listing coming soon) |
+| Firefox, or a program instead of an extension | [Turbobulls Connector app](https://github.com/turbobullsapp/turbobulls-bridge) |
 
-A development build (see Development below) answers only a copy of the app running on your own
-computer, at `http://localhost:3000`.
+Turbobulls talks only to the store version. A copy you load by hand gets a different extension id,
+which the app does not know, on purpose: the app never trusts an id anyone could claim. To build
+it yourself, see [Development](#development).
 
-## Use it
+## Getting started
 
-1. Click the extension's icon. On the page that opens, paste your provider's API key and press
-   **Save**. The extension checks the key with one small request.
-2. In Turbobulls, open a custom asset, choose **From my data provider**, search for the symbol and
-   pick it.
+1. **Add your key.** Click the extension's icon. On the settings page that opens, paste your
+   provider's API key and press **Save**. The extension checks the key with one small request.
+2. **Find the Connector in Turbobulls.** Open **Settings > Custom data sources**: the extension
+   shows as ready, with the providers you set up.
+3. **Price an asset.** Add a custom asset, choose **From a custom data source**, search for the
+   symbol and pick it. Its prices fill in and stay up to date while Turbobulls is open in a
+   browser with the extension.
 
-Turbobulls refreshes linked prices while the app is open in a browser with the extension, and your
-other devices (your phone included) receive them through the app's normal encrypted sync. What you
-can price depends on your plan with the provider.
+What you can price depends on your plan with the provider.
+
+## Supported providers
+
+| Provider | Covers | Notes |
+|---|---|---|
+| [EODHD](https://eodhd.com) | Stocks, ETFs and funds on most exchanges | |
+| [Twelve Data](https://twelvedata.com) | Stocks, ETFs, forex and crypto | |
+| [Alpha Vantage](https://www.alphavantage.co) | Stocks and ETFs | The free plan allows few requests a day |
+| [Finnhub](https://finnhub.io) | Stocks | Daily prices need a paid plan |
+| [A source of your own](#your-own-sources) | Anything an `https://` address returns as JSON or CSV | No search: you type the symbol |
+
+## Privacy and security
+
+The extension asks for as little as it can:
+
+| Permission | Why |
+|---|---|
+| `storage` | To keep your API keys and your own sources on this device. Never synced to your browser account. |
+| `eodhd.com`, `api.twelvedata.com`, `www.alphavantage.co`, `finnhub.io` | To call your provider's API. |
+| Optional: one `https://` site at a time | Only when you add a source of your own, and only for its site. The browser asks you first; removing the source gives the permission back. |
+
+- **It cannot read any web page.** It has no content scripts and no access to your tabs.
+- **Only `https://app.turbobulls.com` can talk to it.** Other websites cannot even see that it is
+  installed, and the extension checks again that each message comes from the app's own page.
+- **The app can never send it a web address.** The app can only ask for a search or for prices
+  from one of the four providers or from a source you added on the settings page, so the extension
+  cannot be used to reach anything else. It never follows a redirect.
+- **Your key goes only to its own provider**, in a header where the provider accepts one, and never
+  appears in an answer, a message or a log.
+
+Found a security problem? Please report it privately, as described in [SECURITY.md](SECURITY.md).
 
 ## Your own sources
 
 For prices none of the four providers carry (a pension fund's daily price, a small exchange, a
-spreadsheet you keep yourself), add a source on the settings page: any `https://` address that
-answers JSON or CSV. You give it a name, the address with placeholders (`{SYMBOL}`, `{FROM}`,
-`{TO}`, `{FROM_UNIX}`, `{TO_UNIX}`, `{KEY}`), where the date and the price sit in the answer, the
-date format, the currency, and a key if the source needs one. **Try it** fetches the last 30 days
-and shows what it read, or why nothing matched.
+spreadsheet you publish yourself), add a source on the settings page: any `https://` address that
+answers JSON or CSV. Give it a name, the address with placeholders (`{SYMBOL}`, `{FROM}`, `{TO}`,
+`{FROM_UNIX}`, `{TO_UNIX}`, `{KEY}`), where the date and the price sit in the answer, the date
+format, the currency, and a key if the source needs one. **Try it** fetches the last 30 days and
+shows what it read, or why nothing matched.
 
-In Turbobulls, the source appears among your data providers. It has no search: you type the symbol
-(the source's settings can say what to type, like "Fund code"). Turbobulls sees the source's name,
-never its address or key. The extension never follows a redirect, so give it the address the data
-finally comes from. Use only sources whose terms allow this use. The settings mirror the bridge's config format, described in the
-[turbobulls-bridge README](https://github.com/turbobullsapp/turbobulls-bridge#custom-sources).
+In Turbobulls the source appears among your custom data sources, without search: you type the
+symbol, and the source's settings can say what to type ("Fund code"). Turbobulls sees the source's
+name, never its address or key. Give the extension the address the data finally comes from, since
+it never follows a redirect, and use only sources whose terms allow this use.
 
-## How it works
+The settings mirror the Connector app's config format, described in full in
+[its documentation](https://github.com/turbobullsapp/turbobulls-bridge/blob/main/docs/custom-sources.md).
 
-The app and the extension speak a small protocol: `hello`, `search`, `history` and
-`openSettings`. See [PROTOCOL.md](PROTOCOL.md). The provider code in `src/shared/` is identical in
-turbobulls-bridge.
+## FAQ
+
+<details>
+<summary><strong>Does Turbobulls see my API key?</strong></summary>
+
+No. The key stays in the extension's storage on this device and is sent only to its own provider.
+The app receives prices, never the key.
+</details>
+
+<details>
+<summary><strong>Do I need the extension on every device?</strong></summary>
+
+No. One computer with the extension is enough. Turbobulls stores the prices in your workspace,
+end-to-end encrypted, and your other devices, your phone included, receive them with the next
+sync. Prices update while Turbobulls is open in a browser that has the extension.
+</details>
+
+<details>
+<summary><strong>Which browsers are supported?</strong></summary>
+
+Chrome and Edge. For Firefox, or if you prefer a program to an extension, use the
+[Turbobulls Connector app](https://github.com/turbobullsapp/turbobulls-bridge).
+</details>
+
+<details>
+<summary><strong>Why does the app not talk to a copy I built myself?</strong></summary>
+
+The app knows only the store version's id. Any extension can claim an id in a development build,
+so the app trusts only the published one. A development build answers a copy of the app running
+at `http://localhost:3000` instead.
+</details>
 
 ## Development
 
+Requirements: Node.js 22 or newer and pnpm.
+
 ```bash
 pnpm install
-pnpm check        # typecheck, lint, test, store builds for Chrome and Edge
+pnpm check        # typecheck, lint, test and store builds for Chrome and Edge
 pnpm build:dev    # development build in .output/chrome-mv3-dev
-pnpm dev-id       # prints the development extension id
+pnpm dev-id       # print the development extension id
 ```
 
-A development build also answers a copy of the app running at `http://localhost:3000`, and always
-has the id `flnofeaegigjpjinmbhlfgagajconknk`, so that copy can address it. Store builds have
-neither. The development id is no secret (anyone can build an extension with it from the public key
-in `src/dev-key.ts`), so app.turbobulls.com never talks to it.
+A development build also answers `http://localhost:3000` and always has the id
+`flnofeaegigjpjinmbhlfgagajconknk`. That id is no secret: anyone can build an extension with it from
+the public key in `src/dev-key.ts`, which is why the published app never talks to it. Store builds
+have neither.
 
-`pnpm dev` (live reload) adds permissions WXT needs for reloading; never ship its output. The
-packages uploaded to the stores are the ones the release workflow builds from a tagged commit and
-attaches to a GitHub release. `pnpm zip` makes the same packages locally, for testing only: never
-upload a package built on your own computer.
+`pnpm dev` (live reload) adds permissions needed for reloading: never ship its output. The packages
+uploaded to the stores are the ones the release workflow builds from a tagged commit and attaches
+to a GitHub release. `pnpm zip` makes the same packages locally for testing only; never upload a
+package built on your own computer.
+
+The provider code in `src/shared/` is identical in the
+[Connector app](https://github.com/turbobullsapp/turbobulls-bridge); a change there is made in both.
+
+## Contributing
+
+Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first, and
+report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © Turbobulls
