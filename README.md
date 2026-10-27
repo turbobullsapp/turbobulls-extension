@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="public/icon/128.png" width="96" height="96" alt="Turbobulls Connector">
+  <img src="public/icon/128.png" width="96" height="96" alt="Turbobulls Connector: browser extension">
 </p>
 
-<h1 align="center">Turbobulls Connector</h1>
+<h1 align="center">Turbobulls Connector: browser extension</h1>
 
 <p align="center">
   <strong>Prices from your own market-data subscription, for <a href="https://turbobulls.com">Turbobulls</a>.</strong><br>
