@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeBrowser } from 'wxt/testing/fake-browser'
-import { stepStates } from './entrypoints/options/steps'
+import { setupPill, stepStates } from './entrypoints/options/steps'
 import { createExternalHandler } from './external'
 import { lastPricesSent, markPricesSent } from './progress'
 import { fakeFetch, path, TEST_KEY } from './shared/__fixtures__/fake-fetch.js'
@@ -14,6 +14,14 @@ describe('setup steps', () => {
     expect(stepStates({ ready: [], lastSent: undefined })).toEqual(['current', 'upcoming', 'upcoming'])
     expect(stepStates({ ready: ['EODHD'], lastSent: undefined })).toEqual(['done', 'current', 'upcoming'])
     expect(stepStates({ ready: ['EODHD'], lastSent: new Date() })).toEqual(['done', 'done', 'done'])
+  })
+
+  it('says by the title whether nothing is set up, a source is ready, or prices have gone out', () => {
+    expect(setupPill({ ready: [], lastSent: undefined })).toEqual({ label: 'Not set up yet', tone: 'none' })
+    expect(setupPill({ ready: ['EODHD'], lastSent: undefined })).toEqual({ label: 'Ready to link', tone: 'next' })
+    expect(setupPill({ ready: ['EODHD'], lastSent: new Date() })).toEqual({ label: 'Working', tone: 'ok' })
+    // Prices went out once, but every key and source has since been removed: nothing works now.
+    expect(setupPill({ ready: [], lastSent: new Date() })).toEqual({ label: 'Not set up yet', tone: 'none' })
   })
 })
 

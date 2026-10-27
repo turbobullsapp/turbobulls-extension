@@ -6,7 +6,7 @@ import { dispatch } from '../../shared/dispatch.js'
 import { PROVIDER_IDS, type ProviderId } from '../../shared/protocol/types.js'
 import { ADAPTERS } from '../../shared/providers/registry.js'
 import { reconcileSitePermissions } from '../../sources'
-import { el, setStatus } from './dom'
+import { el, rowMenu, setStatus } from './dom'
 import { renderSources } from './sources-ui'
 import { renderSteps, watchSteps } from './steps'
 
@@ -26,29 +26,88 @@ async function testKey(provider: ProviderId): Promise<{ ok: boolean; text: strin
   return answer.ok ? { ok: true, text: `${ADAPTERS[provider].name} accepted the key.` } : { ok: false, text: answer.error.message }
 }
 
+/** What each provider covers, in a line under its name. */
+const COVERS: Record<ProviderId, string> = {
+  eodhd: 'Stocks, ETFs and funds on most exchanges',
+  twelvedata: 'Stocks, ETFs, forex and crypto',
+  alphavantage: 'Stocks and ETFs. The free plan allows few requests a day',
+  finnhub: 'Stocks. Daily prices need a paid plan',
+}
+
+/** The key field open in a row, if any: one at a time, so one main button shows. */
+let closeOpenEditor: (() => void) | undefined
+
 function renderProvider(provider: ProviderId, hint: string | undefined): HTMLElement {
   const name = ADAPTERS[provider].name
   const inputId = `key-${provider}`
   const badge = el('span', { className: 'badge' })
   const status = el('p', { className: 'status', role: 'status' })
   status.setAttribute('aria-live', 'polite')
-  const input = el('input', { id: inputId, type: 'password', autocomplete: 'off', spellcheck: false, placeholder: 'Paste your API key' })
+  const actions = el('div', { className: 'actions' })
+
+  // The key field, in a row of its own under the provider, while a key is being added or replaced.
+  const input = el('input', { id: inputId, type: 'password', autocomplete: 'off', spellcheck: false })
   const label = el('label', { htmlFor: inputId, className: 'visually-hidden' }, `${name} API key`)
   const show = el('button', { type: 'button' }, 'Show')
-  // Blue only once a key is typed, so the page never shows a row of blue buttons.
-  const save = el('button', { type: 'button' }, 'Save')
-  input.addEventListener('input', () => save.classList.toggle('primary', input.value.trim() !== ''))
-  const test = el('button', { type: 'button' }, 'Test key')
-  const remove = el('button', { type: 'button' }, 'Remove')
+  const save = el('button', { type: 'button', className: 'primary' }, 'Save and test')
+  const cancel = el('button', { type: 'button' }, 'Cancel')
+  const editor = el(
+    'div',
+    { className: 'editor', hidden: true },
+    el('div', { className: 'controls' }, label, input, show, save, cancel),
+    el('p', { className: 'hint' }, `Find it in your ${name} account. `, el('a', { href: KEY_PAGES[provider], target: '_blank', rel: 'noopener noreferrer' }, 'Get your key')),
+  )
 
-  const refresh = (currentHint: string | undefined) => {
-    badge.textContent = currentHint ? `Key saved, ends in ${currentHint}` : 'No key'
-    badge.className = currentHint ? 'badge ok' : 'badge'
-    test.disabled = !currentHint
-    remove.disabled = !currentHint
+  const test = el('button', { type: 'button', className: 'sm' }, 'Test')
+  const add = el('button', { type: 'button', className: 'sm' }, 'Add key')
+  let current = hint
+
+  const closeEditor = (refocus: boolean) => {
+    if (editor.hidden) return
+    editor.hidden = true
+    input.value = ''
+    input.type = 'password'
+    show.textContent = 'Show'
+    if (closeOpenEditor === close) closeOpenEditor = undefined
+    refresh()
+    if (refocus) (current ? test : add).focus()
   }
-  refresh(hint)
+  const close = () => closeEditor(false)
+  const openEditor = () => {
+    if (closeOpenEditor && closeOpenEditor !== close) closeOpenEditor()
+    closeOpenEditor = close
+    input.placeholder = current ? `Paste the new ${name} key` : `Paste your ${name} API key`
+    editor.hidden = false
+    refresh()
+    input.focus()
+  }
 
+  const removeKey = async () => {
+    await setKey(provider, '')
+    current = undefined
+    refresh()
+    setStatus(status, 'Key removed from this browser.')
+  }
+  const menu = rowMenu(`More for ${name}`, [
+    { label: 'Replace the key', onSelect: openEditor },
+    { label: `Get a key at ${name}`, href: KEY_PAGES[provider] },
+    { label: 'Remove the key', danger: true, onSelect: () => void removeKey() },
+  ])
+
+  function refresh() {
+    badge.className = current ? 'badge ok' : 'badge quiet'
+    badge.replaceChildren(...(current ? ['Key saved, ends in ', el('span', { className: 'mono' }, current)] : ['No key']))
+    // The row whose key field is open loses its own Add key: the field's Cancel closes it.
+    actions.replaceChildren(...(current ? [test, menu] : editor.hidden ? [add] : []))
+  }
+  refresh()
+
+  add.addEventListener('click', openEditor)
+  cancel.addEventListener('click', () => closeEditor(true))
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') save.click()
+    if (event.key === 'Escape') closeEditor(true)
+  })
   show.addEventListener('click', () => {
     input.type = input.type === 'password' ? 'text' : 'password'
     show.textContent = input.type === 'password' ? 'Show' : 'Hide'
@@ -59,11 +118,8 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
       return
     }
     await setKey(provider, input.value)
-    input.value = ''
-    save.classList.remove('primary')
-    input.type = 'password'
-    show.textContent = 'Show'
-    refresh((await keyHints())[provider])
+    current = (await keyHints())[provider]
+    closeEditor(true)
     setStatus(status, 'Saved. Checking it with one small request...')
     const result = await testKey(provider)
     setStatus(status, result.text, result.ok ? 'ok' : 'error')
@@ -75,24 +131,12 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
     setStatus(status, result.text, result.ok ? 'ok' : 'error')
     test.disabled = false
   })
-  remove.addEventListener('click', async () => {
-    await setKey(provider, '')
-    refresh(undefined)
-    setStatus(status, 'Key removed from this browser.')
-  })
 
   return el(
     'div',
     { className: 'item' },
-    el(
-      'div',
-      { className: 'item-head' },
-      el('h3', {}, name),
-      badge,
-      el('span', { className: 'spacer' }),
-      el('a', { href: KEY_PAGES[provider], target: '_blank', rel: 'noopener noreferrer' }, 'Get your key'),
-    ),
-    el('div', { className: 'controls' }, label, input, show, save, test, remove),
+    el('div', { className: 'row' }, el('div', {}, el('div', { className: 'name' }, name), el('div', { className: 'sub' }, COVERS[provider])), badge, actions),
+    editor,
     status,
   )
 }
@@ -106,11 +150,11 @@ async function main() {
   const hints = await keyHints()
   container.replaceChildren(...PROVIDER_IDS.map((p) => renderProvider(p, hints[p])))
   await renderSources(sources, () => undefined)
-  const steps = document.getElementById('steps')
-  const progress = document.getElementById('setup-progress')
-  if (steps && progress) {
-    await renderSteps(steps, progress)
-    watchSteps(steps, progress)
+  const setup = document.getElementById('setup')
+  const pill = document.getElementById('setup-pill')
+  if (setup && pill) {
+    await renderSteps(setup, pill)
+    watchSteps(setup, pill)
   }
   const version = document.getElementById('version')
   if (version) version.textContent = `Version ${browser.runtime.getManifest().version}`

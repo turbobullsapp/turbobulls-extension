@@ -5,7 +5,7 @@ import { lastPricesSent } from '../../progress'
 import { PROVIDER_IDS } from '../../shared/protocol/types.js'
 import { ADAPTERS } from '../../shared/providers/registry.js'
 import { getCustomSources } from '../../sources'
-import { el } from './dom'
+import { el, icon } from './dom'
 
 export type StepState = 'done' | 'current' | 'upcoming'
 
@@ -22,27 +22,31 @@ export function stepStates(progress: SetupProgress): [StepState, StepState, Step
   return done.map((d, i) => (d ? 'done' : i === current ? 'current' : 'upcoming')) as [StepState, StepState, StepState]
 }
 
+/** The word by the page title: where the setup stands, at a glance. */
+export function setupPill(progress: SetupProgress): { label: string; tone: 'ok' | 'next' | 'none' } {
+  if (progress.ready.length > 0 && progress.lastSent) return { label: 'Working', tone: 'ok' }
+  if (progress.ready.length > 0) return { label: 'Ready to link', tone: 'next' }
+  return { label: 'Not set up yet', tone: 'none' }
+}
+
 function formatWhen(date: Date): string {
   return date.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
-function step(index: number, state: StepState, title: string, ...body: (Node | string)[]): HTMLElement {
-  const marker = el('span', { className: 'marker' }, state === 'done' ? '' : String(index))
-  marker.setAttribute('aria-hidden', 'true')
-  const label = state === 'done' ? 'Done' : state === 'current' ? 'Next' : 'Later'
-  return el(
-    'li',
-    { className: `step ${state}` },
-    marker,
-    el('div', {}, el('h3', {}, title, el('span', { className: 'visually-hidden' }, ` (${label})`)), ...body),
-  )
-}
+/** The steps' short names on the track, and each one's own heading when it is the one to do. */
+const STEPS = [
+  { short: 'Add a key or a source', title: 'Add your provider\u2019s key, or a source of your own' },
+  { short: 'Link an asset in Turbobulls', title: 'Link an asset in Turbobulls' },
+  { short: 'Prices keep up by themselves', title: 'Leave the rest to Turbobulls' },
+] as const
 
-/** Jump to a section of the page and put the cursor in its first field. */
+const STATE_LABELS: Record<StepState, string> = { done: 'Done', current: 'Next', upcoming: 'Later' }
+
+/** Jump to a section of the page and put the cursor on its first field or button. */
 function jumpTo(id: string): void {
   const section = document.getElementById(id)?.closest('section')
   section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  section?.querySelector<HTMLElement>('input, button.primary')?.focus({ preventScroll: true })
+  section?.querySelector<HTMLElement>('input, button.primary, .list button, button.link, button.add')?.focus({ preventScroll: true })
 }
 
 export async function readProgress(): Promise<SetupProgress> {
@@ -52,61 +56,84 @@ export async function readProgress(): Promise<SetupProgress> {
   return { ready, lastSent: await lastPricesSent() }
 }
 
-export async function renderSteps(list: HTMLElement, progressLabel: HTMLElement): Promise<void> {
-  const progress = await readProgress()
-  const [one, two, three] = stepStates(progress)
-  const appUrl = linkAssetUrl(import.meta.env.MODE)
-
-  const addKey = el('button', { type: 'button', className: one === 'current' ? 'primary' : '' }, 'Add a key')
-  addKey.addEventListener('click', () => jumpTo('keys'))
-  const addSource = el('button', { type: 'button' }, 'Add a source')
-  addSource.addEventListener('click', () => jumpTo('custom'))
-
-  const open = el('a', { className: `button ${two === 'current' ? 'primary' : ''}`.trim(), href: appUrl, target: '_blank', rel: 'noopener noreferrer' }, two === 'done' ? 'Link another asset' : 'Open Turbobulls')
-
-  list.replaceChildren(
-    step(
-      1,
-      one,
-      'Add your provider\u2019s key, or a source of your own',
-      one === 'done'
-        ? el('p', {}, `Ready: ${progress.ready.join(', ')}.`)
-        : el('p', {}, 'Paste the API key of the provider you pay for. For prices no provider carries, add any address that answers JSON or CSV.'),
-      ...(one === 'done' ? [] : [el('div', { className: 'controls' }, addKey, addSource)]),
-    ),
-    step(
-      2,
-      two,
-      'Link an asset in Turbobulls',
-      el(
-        'p',
-        {},
-        'In Turbobulls, add a custom asset, open its Prices tab and choose ',
-        el('strong', {}, 'From a custom data source'),
-        '. Pick the source, then the symbol.',
-      ),
-      ...(one === 'done' ? [el('div', { className: 'controls' }, open)] : []),
-    ),
-    step(
-      3,
-      three,
-      'Leave the rest to Turbobulls',
-      el(
-        'p',
-        {},
-        three === 'done' && progress.lastSent
-          ? `Working: prices last went to Turbobulls on ${formatWhen(progress.lastSent)}. They update while Turbobulls is open in this browser, and reach your phone through sync.`
-          : 'Prices update by themselves while Turbobulls is open in this browser, and reach your other devices, your phone included, through sync.',
-      ),
-    ),
-  )
-  const doneCount = [one, two, three].filter((s) => s === 'done').length
-  progressLabel.textContent = doneCount === 3 ? 'All set' : `${doneCount} of 3 done`
+function renderPill(pill: HTMLElement, progress: SetupProgress): void {
+  const { label, tone } = setupPill(progress)
+  pill.replaceChildren(el('span', { className: `dot ${tone === 'none' ? '' : tone}`.trim() }), label)
 }
 
-/** Re-draw the steps whenever a key, a source or the last-sent time changes, from any tab. */
-export function watchSteps(list: HTMLElement, progressLabel: HTMLElement): void {
+/** Everything done: one line, with when prices last went to Turbobulls. */
+function allSet(card: HTMLElement, lastSent: Date, appUrl: string): void {
+  card.className = 'card status-card'
+  card.replaceChildren(
+    el('span', { className: 'tile' }, icon('check')),
+    el(
+      'div',
+      { className: 'text' },
+      el('h2', { id: 'setup-title' }, 'All set'),
+      el('p', {}, `Prices last went to Turbobulls on ${formatWhen(lastSent)}. They update while Turbobulls is open in this browser, and reach your phone through sync.`),
+    ),
+    el('a', { className: 'button sm', href: appUrl, target: '_blank', rel: 'noopener noreferrer' }, 'Link another asset'),
+  )
+}
+
+export async function renderSteps(card: HTMLElement, pill: HTMLElement): Promise<void> {
+  const progress = await readProgress()
+  const states = stepStates(progress)
+  const appUrl = linkAssetUrl(import.meta.env.MODE)
+  renderPill(pill, progress)
+  if (states.every((s) => s === 'done') && progress.lastSent) {
+    allSet(card, progress.lastSent, appUrl)
+    return
+  }
+
+  const track = el(
+    'ol',
+    { className: 'track' },
+    ...STEPS.map((step, i) => {
+      const state = states[i] ?? 'upcoming'
+      const item = el(
+        'li',
+        { className: state },
+        el('span', { className: 'marker' }, state === 'done' ? '' : String(i + 1)),
+        step.short,
+        el('span', { className: 'visually-hidden' }, ` (${STATE_LABELS[state]})`),
+      )
+      item.querySelector('.marker')?.setAttribute('aria-hidden', 'true')
+      if (state === 'current') item.setAttribute('aria-current', 'step')
+      return item
+    }),
+  )
+
+  // Only the step to do now says what to do, with its buttons.
+  const now = states.indexOf('current')
+  let body: (Node | string)[]
+  if (now === 0) {
+    const addKey = el('button', { type: 'button', className: 'primary sm' }, 'Add a key')
+    addKey.addEventListener('click', () => jumpTo('keys'))
+    const addSource = el('button', { type: 'button', className: 'sm' }, 'Add a source')
+    addSource.addEventListener('click', () => jumpTo('custom'))
+    body = [
+      el('p', {}, 'Paste the API key of the provider you pay for. For prices no provider carries, add any address that answers JSON or CSV.'),
+      el('div', { className: 'controls' }, addKey, addSource),
+    ]
+  } else {
+    body = [
+      el('p', {}, 'In Turbobulls, add a custom asset, open its Prices tab and choose ', el('strong', {}, 'From a custom data source'), '. Pick the source, then the symbol.'),
+      el('div', { className: 'controls' }, el('a', { className: 'button primary sm', href: appUrl, target: '_blank', rel: 'noopener noreferrer' }, 'Open Turbobulls')),
+    ]
+  }
+  const doneCount = states.filter((s) => s === 'done').length
+  card.className = 'card'
+  card.replaceChildren(
+    el('div', { className: 'card-head' }, el('h2', { id: 'setup-title' }, 'Set up in three steps'), el('span', { className: 'desc' }, `${doneCount} of 3 done`)),
+    track,
+    el('div', { className: 'now' }, el('h3', {}, STEPS[now === -1 ? 0 : now]?.title ?? ''), ...body),
+  )
+}
+
+/** Re-draw the setup whenever a key, a source or the last-sent time changes, from any tab. */
+export function watchSteps(card: HTMLElement, pill: HTMLElement): void {
   browser.storage.onChanged.addListener((_changes, area) => {
-    if (area === 'local') void renderSteps(list, progressLabel)
+    if (area === 'local') void renderSteps(card, pill)
   })
 }

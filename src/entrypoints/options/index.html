@@ -12,52 +12,71 @@
       <img src="/icon/48.png" alt="" width="28" height="28" />
       <span class="wordmark">Turbobulls</span>
       <span class="product">Connector</span>
+      <span class="version" id="version"></span>
     </header>
     <main>
       <div class="page-head">
-        <h1>Custom data sources</h1>
-        <p>Prices from your own market-data provider, with your own API key. Your keys stay in this browser, on this device.</p>
+        <div>
+          <h1>Custom data sources</h1>
+          <p>Prices from your own market-data provider, with your own API key. Your keys stay in this browser, on this device.</p>
+        </div>
+        <span class="pill" id="setup-pill" role="status"></span>
       </div>
 
-      <section class="card" aria-labelledby="setup">
-        <div class="card-head">
-          <h2 id="setup">Set up in three steps</h2>
-          <span class="desc" id="setup-progress"></span>
-        </div>
-        <ol id="steps" class="steps"></ol>
-      </section>
+      <section class="card" id="setup" aria-labelledby="setup-title"></section>
 
       <section class="card" aria-labelledby="keys">
         <div class="card-head">
           <h2 id="keys">Your API keys</h2>
           <span class="desc">For the providers you pay for</span>
         </div>
-        <div id="providers" class="rows"></div>
+        <div id="providers" class="list"></div>
         <p class="card-note">Provider names belong to their owners and only show which services the Connector can ask with your key. Turbobulls is not affiliated with or endorsed by them.</p>
       </section>
 
       <section class="card" aria-labelledby="custom">
         <div class="card-head">
           <h2 id="custom">Your own sources</h2>
-          <span class="desc">Any https address that answers JSON or CSV, such as a pension fund or a sheet you keep</span>
+          <span class="desc">Any https address that answers JSON or CSV</span>
         </div>
         <div id="sources"></div>
       </section>
 
       <section class="card" aria-labelledby="privacy">
         <div class="card-head"><h2 id="privacy">Nobody else sees your keys or your data</h2></div>
-        <div class="card-body">
-          <ul>
-            <li>Your keys stay in this browser, on this device, and go only to your provider. Turbobulls never receives them.</li>
-            <li>Turbobulls cannot read your data: the prices, and which assets you price, are saved end-to-end encrypted with the rest of your portfolio.</li>
-            <li>The Turbobulls app in your browser gets only the names of your own sources and the prices, never their addresses.</li>
-            <li>This extension cannot read any web page, Turbobulls included. Chrome asks you before it may reach a new site.</li>
-          </ul>
+        <div class="facts">
+          <div class="fact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3" /></svg>
+            <div>
+              <h3>Your keys stay here</h3>
+              <p>In this browser, on this device. They go only to your provider; Turbobulls never receives them.</p>
+            </div>
+          </div>
+          <div class="fact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+            <div>
+              <h3>Turbobulls cannot read your data</h3>
+              <p>The prices, and which assets you price, are saved end-to-end encrypted with the rest of your portfolio.</p>
+            </div>
+          </div>
+          <div class="fact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16" /></svg>
+            <div>
+              <h3>Names, never addresses</h3>
+              <p>Turbobulls in your browser gets the names of your own sources and the prices, not where they come from.</p>
+            </div>
+          </div>
+          <div class="fact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="m4.9 4.9 14.2 14.2" /></svg>
+            <div>
+              <h3>No access to web pages</h3>
+              <p>The extension cannot read any page, Turbobulls included. Chrome asks you before it may reach a new site.</p>
+            </div>
+          </div>
         </div>
       </section>
 
       <footer>
-        <span id="version"></span>
         <a href="https://github.com/turbobullsapp/turbobulls-extension" target="_blank" rel="noopener noreferrer">Source code</a>
         <a href="https://turbobulls.com" target="_blank" rel="noopener noreferrer">turbobulls.com</a>
       </footer>

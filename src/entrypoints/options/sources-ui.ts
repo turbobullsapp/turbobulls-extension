@@ -6,7 +6,7 @@ import { addDays, todayUtc } from '../../shared/protocol/dates.js'
 import { ConnectorError } from '../../shared/protocol/errors.js'
 import { LIMITS } from '../../shared/protocol/types.js'
 import { getCustomSources, hostOf, KEY_NEEDED, keyDecision, newSourceId, reconcileSitePermissions, removeCustomSource, saveCustomSource, sitePattern } from '../../sources'
-import { el, field, input, select, setStatus } from './dom'
+import { el, field, icon, input, rowMenu, select, setStatus } from './dom'
 
 const DATE_FORMAT_LABELS: Record<(typeof DATE_FORMATS)[number], string> = {
   'YYYY-MM-DD': '2026-10-23',
@@ -23,6 +23,7 @@ interface Form {
   read(): Record<string, unknown>
   key: HTMLInputElement
   testSymbol: HTMLInputElement
+  fillExample(): void
 }
 
 /** A free, keyless public feed to start from: the European Central Bank's daily exchange rates. */
@@ -163,7 +164,7 @@ function buildForm(existing: CustomSource | undefined, hasKey: boolean): Form {
       symbolHint: symbolHint.value,
     }
   }
-  return { root, read, key, testSymbol }
+  return { root, read, key, testSymbol, fillExample }
 }
 
 /** Ask Chrome for the site; this must be the first wait in a click, or Chrome refuses it. */
@@ -177,45 +178,60 @@ async function askForSite(source: CustomSource): Promise<boolean> {
 
 export async function renderSources(container: HTMLElement, onChange: () => void): Promise<void> {
   const sources = await getCustomSources()
-  const list = el('div', { className: 'rows' })
+  const list = el('div', { className: 'list' })
   for (const source of sources) {
-    const remove = el('button', { type: 'button' }, 'Remove')
-    const edit = el('button', { type: 'button' }, 'Edit')
-    const row = el(
-      'div',
-      { className: 'item' },
-      el(
-        'div',
-        { className: 'item-head' },
-        el('h3', {}, source.name),
-        el('span', { className: 'badge' }, `${source.format.toUpperCase()}, ${source.currency}`),
-        el('span', { className: 'spacer' }),
-        el('span', { className: 'meta' }, hostOf(source)),
-      ),
-      el('div', { className: 'controls' }, edit, remove),
-    )
+    const edit = el('button', { type: 'button', className: 'sm' }, 'Edit')
     edit.addEventListener('click', () => void openForm(container, onChange, source))
-    remove.addEventListener('click', async () => {
+    const remove = async () => {
       if (!confirm(`Remove ${source.name}? Assets linked to it keep the prices they have, and stop updating.`)) return
       await removeCustomSource(source.id)
       await renderSources(container, onChange)
       onChange()
-    })
-    list.append(row)
+    }
+    list.append(
+      el(
+        'div',
+        { className: 'item' },
+        el(
+          'div',
+          { className: 'row' },
+          el(
+            'div',
+            {},
+            el('div', { className: 'name' }, source.name),
+            el('div', { className: 'sub' }, `${source.format.toUpperCase()}, prices in ${source.currency}, from ${hostOf(source)}`),
+          ),
+          el('span', { className: 'badge ok' }, 'Ready'),
+          el('div', { className: 'actions' }, edit, rowMenu(`More for ${source.name}`, [{ label: 'Remove', danger: true, onSelect: () => void remove() }])),
+        ),
+      ),
+    )
   }
-  const add = el('button', { type: 'button', className: sources.length === 0 ? 'primary' : '' }, 'Add a source')
+  const add = el('button', { type: 'button', className: 'add' }, icon('plus'), 'Add a source')
   add.disabled = sources.length >= LIMITS.customSources
   add.addEventListener('click', () => void openForm(container, onChange, undefined))
   const children: HTMLElement[] = []
-  if (sources.length === 0) children.push(el('p', { className: 'empty' }, 'No sources yet.'))
-  children.push(list, el('div', { className: 'add-row' }, add))
+  if (sources.length === 0) {
+    const example = el('button', { type: 'button', className: 'link' }, 'Start from the European Central Bank\u2019s free euro rates')
+    example.addEventListener('click', () => void openForm(container, onChange, undefined, { example: true }))
+    children.push(el('p', { className: 'empty' }, 'A pension fund\u2019s daily price, a small exchange, a sheet you publish yourself. New to this? ', example, '.'))
+  } else {
+    children.push(list)
+  }
+  children.push(add)
   container.replaceChildren(...children)
 }
 
-async function openForm(container: HTMLElement, onChange: () => void, existing: CustomSource | undefined): Promise<void> {
+async function openForm(
+  container: HTMLElement,
+  onChange: () => void,
+  existing: CustomSource | undefined,
+  options: { example?: boolean } = {},
+): Promise<void> {
   const taken = (await getCustomSources()).map((s) => s.id).filter((id) => id !== existing?.id)
   const hasKey = existing ? Boolean(await getKey(existing.id)) : false
   const form = buildForm(existing, hasKey)
+  if (options.example) form.fillExample()
   const status = el('p', { className: 'status', role: 'status' })
   status.setAttribute('aria-live', 'polite')
   const errors = el('ul', { className: 'errors' })
