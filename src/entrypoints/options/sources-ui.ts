@@ -136,16 +136,22 @@ async function askForSite(source: CustomSource): Promise<boolean> {
 
 export async function renderSources(container: HTMLElement, onChange: () => void): Promise<void> {
   const sources = await getCustomSources()
-  const list = el('div', { className: 'source-list' })
+  const list = el('div', { className: 'rows' })
   for (const source of sources) {
     const remove = el('button', { type: 'button' }, 'Remove')
     const edit = el('button', { type: 'button' }, 'Edit')
     const row = el(
       'div',
-      { className: 'provider' },
-      el('div', { className: 'provider-head' }, el('h3', {}, source.name), el('span', { className: 'muted' }, hostOf(source))),
-      el('p', { className: 'state' }, `${source.format.toUpperCase()} prices in ${source.currency}`),
-      el('div', { className: 'row' }, edit, remove),
+      { className: 'item' },
+      el(
+        'div',
+        { className: 'item-head' },
+        el('h3', {}, source.name),
+        el('span', { className: 'badge' }, `${source.format.toUpperCase()}, ${source.currency}`),
+        el('span', { className: 'spacer' }),
+        el('span', { className: 'meta' }, hostOf(source)),
+      ),
+      el('div', { className: 'controls' }, edit, remove),
     )
     edit.addEventListener('click', () => void openForm(container, onChange, source))
     remove.addEventListener('click', async () => {
@@ -156,10 +162,13 @@ export async function renderSources(container: HTMLElement, onChange: () => void
     })
     list.append(row)
   }
-  const add = el('button', { type: 'button', className: 'primary' }, 'Add a source')
+  const add = el('button', { type: 'button', className: sources.length === 0 ? 'primary' : '' }, 'Add a source')
   add.disabled = sources.length >= LIMITS.customSources
   add.addEventListener('click', () => void openForm(container, onChange, undefined))
-  container.replaceChildren(list, el('div', { className: 'row' }, add))
+  const children: HTMLElement[] = []
+  if (sources.length === 0) children.push(el('p', { className: 'empty' }, 'No sources yet.'))
+  children.push(list, el('div', { className: 'add-row' }, add))
+  container.replaceChildren(...children)
 }
 
 async function openForm(container: HTMLElement, onChange: () => void, existing: CustomSource | undefined): Promise<void> {
@@ -251,11 +260,11 @@ async function openForm(container: HTMLElement, onChange: () => void, existing: 
   container.replaceChildren(
     el(
       'div',
-      { className: 'provider' },
-      el('h3', {}, existing ? `Edit ${existing.name}` : 'Add a source'),
+      { className: 'card-body' },
+      el('h3', { className: 'form-title' }, existing ? `Edit ${existing.name}` : 'Add a source'),
       form.root,
       errors,
-      el('div', { className: 'row' }, tryIt, save, cancel),
+      el('div', { className: 'controls' }, save, tryIt, cancel),
       status,
     ),
   )

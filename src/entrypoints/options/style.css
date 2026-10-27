@@ -1,27 +1,66 @@
+/*
+ * The Turbobulls app's look: its --tb-* colour tokens (light and dark, from the app's
+ * globals.css), Geist for text, the condensed Bricolage wordmark, settings cards with a header
+ * row, and its button, field and badge shapes.
+ */
 :root {
-  --bg: #f6f7f9;
-  --card: #ffffff;
-  --text: #15181d;
-  --muted: #5d6673;
-  --border: #dde1e7;
-  --accent: #2f7d32;
-  --accent-text: #ffffff;
-  --ok: #2f7d32;
-  --error: #b42318;
+  --tb-canvas: #f8fafc;
+  --tb-surface: #ffffff;
+  --tb-surface-subtle: #f9fafb;
+  --tb-surface-muted: #f3f4f6;
+  --tb-border: #e5e7eb;
+  --tb-border-strong: #d1d5db;
+  --tb-text: #111827;
+  --tb-text-secondary: #4b5563;
+  --tb-text-tertiary: #6b7280;
+  --tb-text-muted: #9ca3af;
+  --tb-link: #155dfc;
+  --tb-brand: #155dfc;
+  --tb-brand-hover: #1250d8;
+  --tb-brand-active: #0f44bd;
+  --tb-brand-soft: #eff6ff;
+  --tb-ok: #05690d;
+  --tb-ok-bg: #cef6bb;
+  --tb-ok-border: #b4e1a2;
+  --tb-error: #b3063d;
+  --tb-error-bg: #f9e4f1;
+  --tb-error-border: #f2c9e3;
+  --tb-info-border: #bfdbfe;
+  --tb-neutral: #545969;
+  --tb-neutral-bg: #e4ecec;
+  --tb-neutral-border: #cbd5d6;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-wordmark: 'Bricolage Grotesque Variable', 'Geist Variable', sans-serif;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1216;
-    --card: #171b21;
-    --text: #e8ebef;
-    --muted: #9aa4b1;
-    --border: #2a3039;
-    --accent: #4caf50;
-    --accent-text: #0f1216;
-    --ok: #6fcf73;
-    --error: #ff8a80;
+    --tb-canvas: #0a0c10;
+    --tb-surface: #10131a;
+    --tb-surface-subtle: #141820;
+    --tb-surface-muted: #1a1e27;
+    --tb-border: #242a35;
+    --tb-border-strong: #333b49;
+    --tb-text: #e6e9ef;
+    --tb-text-secondary: #a1a9b6;
+    --tb-text-tertiary: #858d9c;
+    --tb-text-muted: #636b7b;
+    --tb-link: #7aa5ff;
+    --tb-brand: #2b7fff;
+    --tb-brand-hover: #4a92ff;
+    --tb-brand-active: #1f6fe8;
+    --tb-brand-soft: #111f3d;
+    --tb-ok: #5fd68a;
+    --tb-ok-bg: #0f2a1b;
+    --tb-ok-border: #1d4d31;
+    --tb-error: #ff7a85;
+    --tb-error-bg: #2f1418;
+    --tb-error-border: #5c2229;
+    --tb-info-border: #1f3a70;
+    --tb-neutral: #b4bcc8;
+    --tb-neutral-bg: #1b2029;
+    --tb-neutral-border: #2f3644;
     color-scheme: dark;
   }
 }
@@ -32,145 +71,278 @@
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--tb-canvas);
+  color: var(--tb-text);
+  font: 14px/1.5 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--tb-link);
+  text-underline-offset: 3px;
+}
+
+/* Top bar, as in the app: the mark, the condensed wordmark, the product name. */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  padding: 0 24px;
+  background: var(--tb-surface);
+  border-bottom: 1px solid var(--tb-border);
+}
+
+.wordmark {
+  font-family: var(--font-wordmark);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: var(--tb-text);
+}
+
+.product {
+  color: var(--tb-text-tertiary);
+  font-size: 14px;
+  font-weight: 500;
+  padding-left: 10px;
+  border-left: 1px solid var(--tb-border);
 }
 
 main {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
-  padding: 32px 16px 48px;
+  padding: 28px 16px 48px;
 }
 
-.intro {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 24px;
+.page-head {
+  margin-bottom: 20px;
 }
 
 h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-h2 {
-  font-size: 17px;
-  margin: 0 0 12px;
-}
-
-p {
+.page-head p {
   margin: 4px 0 0;
-  color: var(--muted);
+  color: var(--tb-text-secondary);
 }
 
-.card,
-.provider {
-  background: var(--card);
-  border: 1px solid var(--border);
+/* Cards: the app's settings card, a header row over a body. */
+.card {
+  background: var(--tb-surface);
+  border: 1px solid var(--tb-border);
   border-radius: 12px;
-  padding: 16px 20px;
+  overflow: hidden;
   margin-bottom: 16px;
 }
 
-.card ul {
-  margin: 0;
-  padding-left: 20px;
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--tb-border);
 }
 
-.card li + li {
+.card-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card-head .desc {
+  font-size: 12px;
+  color: var(--tb-text-tertiary);
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.card-body ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--tb-text-secondary);
+}
+
+.card-body li + li {
   margin-top: 6px;
 }
 
-.provider-head {
+/* The next step: tinted like the app's info notices. */
+.card.next {
+  background: var(--tb-brand-soft);
+  border-color: var(--tb-info-border);
+}
+
+.card.next h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.card.next p {
+  margin: 0 0 12px;
+  color: var(--tb-text-secondary);
+}
+
+/* Dense lists: rows split by hairlines, not cards in cards. */
+.rows > .item {
+  padding: 14px 16px;
+}
+
+.rows > .item + .item {
+  border-top: 1px solid var(--tb-border);
+}
+
+.item-head {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
-.provider-head h3 {
+.item-head h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.provider-head a {
-  color: var(--muted);
-  font-size: 13px;
+.item-head .spacer {
+  flex: 1;
 }
 
-.state {
-  font-size: 13px;
-  color: var(--muted);
-  margin: 4px 0 10px;
+.item-head a,
+.item-head .meta {
+  font-size: 12px;
+  color: var(--tb-text-tertiary);
 }
 
-.row {
+.controls {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
+/* Badges: the app's status triples. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid var(--tb-neutral-border);
+  background: var(--tb-neutral-bg);
+  color: var(--tb-neutral);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge.ok {
+  border-color: var(--tb-ok-border);
+  background: var(--tb-ok-bg);
+  color: var(--tb-ok);
+}
+
+/* Fields. */
 input[type='password'],
-input[type='text'] {
-  flex: 1 1 260px;
+input[type='text'],
+select {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--tb-border-strong);
+  background: var(--tb-surface);
+  color: var(--tb-text);
+  font: inherit;
+}
+
+.controls input {
+  flex: 1 1 240px;
   min-width: 0;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font: inherit;
 }
 
-button {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-  font: inherit;
+input::placeholder {
+  color: var(--tb-text-muted);
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a.button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--tb-brand), 0 0 0 3px color-mix(in oklab, var(--tb-brand) 25%, transparent);
+}
+
+/* Buttons: outline by default, brand-filled for the main action. */
+button,
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--tb-border-strong);
+  background: var(--tb-surface);
+  color: var(--tb-text);
+  font: 500 14px/1 var(--font-sans);
+  text-decoration: none;
   cursor: pointer;
+  transition: background-color 120ms;
 }
 
-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-text);
+button:hover {
+  background: var(--tb-surface-muted);
+}
+
+button.primary,
+a.button.primary {
+  background: var(--tb-brand);
+  border-color: var(--tb-brand);
+  color: #ffffff;
+}
+
+button.primary:hover,
+a.button.primary:hover {
+  background: var(--tb-brand-hover);
+  border-color: var(--tb-brand-hover);
+}
+
+button.primary:active,
+a.button.primary:active {
+  background: var(--tb-brand-active);
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: default;
 }
 
 .status {
-  min-height: 1.5em;
-  margin-top: 8px;
+  min-height: 0;
+  margin: 8px 0 0;
   font-size: 13px;
+  color: var(--tb-text-secondary);
+}
+
+.status:empty {
+  display: none;
 }
 
 .status.ok {
-  color: var(--ok);
+  color: var(--tb-ok);
 }
 
 .status.error {
-  color: var(--error);
-}
-
-footer {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 24px;
-}
-
-footer a {
-  color: var(--muted);
+  color: var(--tb-error);
 }
 
 .visually-hidden {
@@ -182,46 +354,16 @@ footer a {
   white-space: nowrap;
 }
 
-.lead {
-  margin: -4px 0 12px;
-}
-
-.muted {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.next {
-  border-color: var(--accent);
-}
-
-.next p {
-  color: var(--text);
-  margin: 0 0 12px;
-}
-
-a.button {
-  display: inline-block;
-  padding: 8px 14px;
-  border-radius: 8px;
-  text-decoration: none;
-  font: inherit;
-}
-
-a.button.primary {
-  background: var(--accent);
-  color: var(--accent-text);
-}
-
+/* The source form. */
 .source-form {
   display: grid;
-  gap: 12px;
-  margin: 12px 0;
+  gap: 16px;
+  margin: 4px 0 16px;
 }
 
 .group {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .group[hidden] {
@@ -231,8 +373,8 @@ a.button.primary {
 .field label {
   display: block;
   font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-weight: 600;
+  margin-bottom: 6px;
 }
 
 .field input,
@@ -240,31 +382,56 @@ a.button.primary {
   width: 100%;
 }
 
-select {
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font: inherit;
-}
-
 .hint {
-  font-size: 12px;
   margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--tb-text-tertiary);
 }
 
 .errors {
-  color: var(--error);
+  margin: 0 0 12px;
+  padding: 10px 12px 10px 28px;
+  border-radius: 6px;
+  border: 1px solid var(--tb-error-border);
+  background: var(--tb-error-bg);
+  color: var(--tb-error);
   font-size: 13px;
-  margin: 0 0 8px;
-  padding-left: 20px;
 }
 
 .errors:empty {
   display: none;
 }
 
-.source-list {
-  margin-bottom: 12px;
+.form-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.add-row {
+  padding: 14px 16px;
+  border-top: 1px solid var(--tb-border);
+}
+
+.rows:empty + .add-row {
+  border-top: 0;
+}
+
+.empty {
+  padding: 14px 16px 0;
+  margin: 0;
+  color: var(--tb-text-tertiary);
+}
+
+footer {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: var(--tb-text-tertiary);
+  font-size: 12px;
+  margin-top: 24px;
+}
+
+footer a {
+  color: var(--tb-text-tertiary);
 }

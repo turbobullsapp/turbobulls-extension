@@ -1,3 +1,5 @@
+import '@fontsource-variable/geist'
+import '@fontsource-variable/bricolage-grotesque/wdth.css'
 import { browser } from 'wxt/browser'
 import { getKey, keyHints, setKey } from '../../keys'
 import { linkAssetUrl } from '../../origins'
@@ -38,18 +40,21 @@ async function refreshNextStep(): Promise<void> {
 function renderProvider(provider: ProviderId, hint: string | undefined): HTMLElement {
   const name = ADAPTERS[provider].name
   const inputId = `key-${provider}`
-  const state = el('p', { className: 'state' })
+  const badge = el('span', { className: 'badge' })
   const status = el('p', { className: 'status', role: 'status' })
   status.setAttribute('aria-live', 'polite')
   const input = el('input', { id: inputId, type: 'password', autocomplete: 'off', spellcheck: false, placeholder: 'Paste your API key' })
   const label = el('label', { htmlFor: inputId, className: 'visually-hidden' }, `${name} API key`)
   const show = el('button', { type: 'button' }, 'Show')
-  const save = el('button', { type: 'button', className: 'primary' }, 'Save')
+  // Blue only once a key is typed, so the page never shows a row of blue buttons.
+  const save = el('button', { type: 'button' }, 'Save')
+  input.addEventListener('input', () => save.classList.toggle('primary', input.value.trim() !== ''))
   const test = el('button', { type: 'button' }, 'Test key')
   const remove = el('button', { type: 'button' }, 'Remove')
 
   const refresh = (currentHint: string | undefined) => {
-    state.textContent = currentHint ? `A key is saved (ends in ${currentHint}).` : 'No key saved.'
+    badge.textContent = currentHint ? `Key saved, ends in ${currentHint}` : 'No key'
+    badge.className = currentHint ? 'badge ok' : 'badge'
     test.disabled = !currentHint
     remove.disabled = !currentHint
   }
@@ -66,6 +71,7 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
     }
     await setKey(provider, input.value)
     input.value = ''
+    save.classList.remove('primary')
     input.type = 'password'
     show.textContent = 'Show'
     refresh((await keyHints())[provider])
@@ -90,15 +96,16 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
 
   return el(
     'div',
-    { className: 'provider' },
+    { className: 'item' },
     el(
       'div',
-      { className: 'provider-head' },
+      { className: 'item-head' },
       el('h3', {}, name),
+      badge,
+      el('span', { className: 'spacer' }),
       el('a', { href: KEY_PAGES[provider], target: '_blank', rel: 'noopener noreferrer' }, 'Get your key'),
     ),
-    state,
-    el('div', { className: 'row' }, label, input, show, save, test, remove),
+    el('div', { className: 'controls' }, label, input, show, save, test, remove),
     status,
   )
 }

@@ -8,48 +8,55 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
+    <header class="topbar">
+      <img src="/icon/48.png" alt="" width="28" height="28" />
+      <span class="wordmark">Turbobulls</span>
+      <span class="product">Connector</span>
+    </header>
     <main>
-      <header class="intro">
-        <img src="/icon/128.png" alt="" width="48" height="48" />
-        <div>
-          <h1>Turbobulls Connector</h1>
-          <p>Prices from your own market-data provider, with your own API key, for Turbobulls.</p>
-        </div>
-      </header>
+      <div class="page-head">
+        <h1>Data sources</h1>
+        <p>Prices from your own market-data provider, with your own API key. Your keys stay in this browser, on this device.</p>
+      </div>
 
       <section id="next" class="card next" hidden aria-labelledby="next-title">
-        <h2 id="next-title">Next: add an asset in Turbobulls</h2>
-        <p>
-          Your provider is ready. In Turbobulls, add a custom asset and choose
-          <strong>From my data provider</strong>; its prices then stay up to date while Turbobulls is
-          open in this browser.
-        </p>
-        <a id="next-link" class="button primary" target="_blank" rel="noopener noreferrer">Open Turbobulls</a>
+        <div class="card-body">
+          <h2 id="next-title">Next: add an asset in Turbobulls</h2>
+          <p>
+            Your provider is ready. In Turbobulls, add a custom asset and choose
+            <strong>From my data provider</strong>; its prices then stay up to date while Turbobulls is
+            open in this browser.
+          </p>
+          <a id="next-link" class="button primary" target="_blank" rel="noopener noreferrer">Open Turbobulls</a>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="keys">
+        <div class="card-head">
+          <h2 id="keys">Your API keys</h2>
+          <span class="desc">For the providers you pay for</span>
+        </div>
+        <div id="providers" class="rows"></div>
+      </section>
+
+      <section class="card" aria-labelledby="custom">
+        <div class="card-head">
+          <h2 id="custom">Your own sources</h2>
+          <span class="desc">Any https address that answers JSON or CSV, such as a pension fund or a sheet you keep</span>
+        </div>
+        <div id="sources"></div>
       </section>
 
       <section class="card" aria-labelledby="how">
-        <h2 id="how">How it works</h2>
-        <ul>
-          <li>Paste the API key of the provider you pay for below, or add your own source. Keys stay in this browser, on this device.</li>
-          <li>In Turbobulls, add a custom asset and choose <strong>From my data provider</strong>.</li>
-          <li>Turbobulls asks this extension for prices; the extension asks your provider and passes back only the prices.</li>
-          <li>Turbobulls never sees your key. This extension cannot read any web page, Turbobulls included.</li>
-        </ul>
-      </section>
-
-      <section aria-labelledby="keys">
-        <h2 id="keys">Your API keys</h2>
-        <div id="providers"></div>
-      </section>
-
-      <section aria-labelledby="custom">
-        <h2 id="custom">Your own sources</h2>
-        <p class="lead">
-          For prices none of these providers carry, such as a pension fund or a spreadsheet you keep:
-          any https address that answers JSON or CSV. Chrome asks once whether the extension may reach
-          the site.
-        </p>
-        <div id="sources"></div>
+        <div class="card-head"><h2 id="how">How it works</h2></div>
+        <div class="card-body">
+          <ul>
+            <li>Paste the key of the provider you pay for, or add a source of your own. Chrome asks once before the extension may reach a new site.</li>
+            <li>In Turbobulls, add a custom asset and choose <strong>From my data provider</strong>.</li>
+            <li>Turbobulls asks this extension for prices; the extension asks your provider and passes back only the prices.</li>
+            <li>Turbobulls never sees your keys. This extension cannot read any web page, Turbobulls included.</li>
+          </ul>
+        </div>
       </section>
 
       <footer>
