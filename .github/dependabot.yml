@@ -1,10 +1,24 @@
+# Dependency updates as pull requests. Each waits a week after a release before it is proposed, so
+# a compromised version that is caught and pulled in its first days never reaches this repository.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      development:
+        dependency-type: development
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ['*']

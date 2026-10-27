@@ -1,6 +1,6 @@
 name: Release
 
-# Runs when a version tag (v0.1.0) is pushed.
+# Runs when a version tag (v1.0.0) is pushed. RELEASING.md has the rules.
 #
 # The build job runs every development tool and holds no write rights at all. The release job runs
 # none of them: it takes the packages the build job made, attests where they came from, and attaches
@@ -13,6 +13,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,19 +26,28 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: The tag is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - run: pnpm install --frozen-lockfile
-      - name: Tag matches package.json
+      - name: The tag matches package.json
         run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+      - name: CHANGELOG.md describes this version
+        run: |
+          awk -v v="${GITHUB_REF_NAME#v}" 'index($0, "## [" v "]") == 1 { found = 1; next } /^## \[|^\[[^]]*\]: / { if (found) exit } found' CHANGELOG.md > notes.md
+          test -s notes.md
       - run: pnpm check
       - run: pnpm zip
+      - name: Gather the release files
+        run: mkdir release && mv .output/*.zip notes.md release/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: packages
-          path: .output/*.zip
+          name: release
+          path: release/
           if-no-files-found: error
 
   release:
@@ -48,12 +61,12 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: packages
-          path: packages
+          name: release
+          path: release
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: packages/*.zip
-      - name: Attach packages to the release
+          subject-path: release/*.zip
+      - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" packages/*.zip --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        run: gh release create "$GITHUB_REF_NAME" release/*.zip --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file release/notes.md --verify-tag
