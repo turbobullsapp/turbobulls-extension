@@ -52,16 +52,12 @@ prices come back.
 
 ## How it works
 
-```mermaid
-flowchart LR
-    app["Turbobulls app<br/>app.turbobulls.com"]
-    ext["Turbobulls Connector<br/>in your browser"]
-    provider["Your data provider<br/>or a source of your own"]
-    app -- "symbol and dates" --> ext
-    ext -- "request, with your key" --> provider
-    provider -- "daily prices" --> ext
-    ext -- "daily prices" --> app
-```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/how-it-works-dark.png">
+    <img src="docs/images/how-it-works-light.png" width="960" alt="How it works: Turbobulls, open in your browser, asks the Turbobulls Connector extension for a symbol and dates. The Connector asks your data provider, with your API key, which stays on your computer. The provider sends the daily prices back to the Connector, which passes them to Turbobulls, where they are saved encrypted.">
+  </picture>
+</p>
 
 The app and the extension speak a small, documented protocol (`hello`, `search`, `history` and
 `openSettings`); see [PROTOCOL.md](PROTOCOL.md). Turbobulls keeps the prices in your workspace,
