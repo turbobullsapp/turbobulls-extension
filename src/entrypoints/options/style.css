@@ -176,6 +176,15 @@ h1 {
   margin-top: 6px;
 }
 
+/* Small print at the foot of a card, under its rows. */
+.card-note {
+  margin: 0;
+  padding: 10px 16px;
+  border-top: 1px solid var(--tb-border);
+  font-size: 12px;
+  color: var(--tb-text-tertiary);
+}
+
 /* The setup steps: a numbered list that ticks itself off. */
 .steps {
   list-style: none;
