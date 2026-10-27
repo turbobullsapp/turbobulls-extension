@@ -35,8 +35,8 @@ From the Chrome Web Store (Chrome and Edge), once the listing is live. The Turbo
 only to the store version: a copy loaded by hand gets a different extension id, which the app does
 not know, and that is on purpose (the app must never trust an id anyone could claim).
 
-To try it before the listing, build the development version and run the app's local dev server,
-which knows the development id (see Development below).
+A development build (see Development below) answers only a copy of the app running on your own
+computer, at `http://localhost:3000`.
 
 ## Use it
 
@@ -79,11 +79,10 @@ pnpm build:dev    # development build in .output/chrome-mv3-dev
 pnpm dev-id       # prints the development extension id
 ```
 
-A development build also answers the app's local dev server (`http://localhost:3000`) and always
-has the id `flnofeaegigjpjinmbhlfgagajconknk`, so the app can address it. Point the app's dev
-server at it with `NEXT_PUBLIC_CONNECTOR_EXTENSION_IDS=flnofeaegigjpjinmbhlfgagajconknk`. Store
-builds have neither, and the production app must never list the development id: anyone can build
-an extension with it from the public key in `src/dev-key.ts`.
+A development build also answers a copy of the app running at `http://localhost:3000`, and always
+has the id `flnofeaegigjpjinmbhlfgagajconknk`, so that copy can address it. Store builds have
+neither. The development id is no secret (anyone can build an extension with it from the public key
+in `src/dev-key.ts`), so app.turbobulls.com never talks to it.
 
 `pnpm dev` (live reload) adds permissions WXT needs for reloading; never ship its output. The
 packages uploaded to the stores are the ones the release workflow builds from a tagged commit and
