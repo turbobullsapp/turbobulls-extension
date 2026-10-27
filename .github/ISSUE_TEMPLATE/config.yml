@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/turbobullsapp/turbobulls-extension/security/advisories/new
+    about: Privately, never in an issue.
+  - name: Help with Turbobulls
+    url: https://www.turbobulls.com/help
+    about: Questions about the Turbobulls app, your account or your portfolio.

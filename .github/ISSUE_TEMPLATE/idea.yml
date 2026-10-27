@@ -1,0 +1,16 @@
+name: Idea
+description: Something it could do, such as another data source.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What you are trying to do
+      description: The prices or assets you want, and what stops you today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+      description: For a provider, a link to its API documentation helps most.

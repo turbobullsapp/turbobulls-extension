@@ -1,0 +1,44 @@
+name: Bug report
+description: Something does not work as described.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. Two things first:
+        - **Never paste an API key**, not even a revoked one, and no screenshot that shows one.
+        - A **security problem** goes to the Security tab (Report a vulnerability), never to an issue.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Shown at the top right of the extension's settings page.
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options: [Chrome, Edge, Brave, Another Chromium browser]
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Data source
+      options: [EODHD, Twelve Data, Alpha Vantage, Finnhub, A source of my own, Not about a source]
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Messages shown, word for word.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to see it again
+      placeholder: |
+        1. ...
+        2. ...

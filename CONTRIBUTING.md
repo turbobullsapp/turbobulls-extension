@@ -1,6 +1,7 @@
 # Contributing
 
-- Branch off `main` and open a pull request; nothing is committed to `main` directly.
+- Branch off `main` and open a pull request; nothing is committed to `main` directly. `main`
+  only changes through pull requests whose checks pass (tests, CodeQL).
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org)
   (`feat:`, `fix:`, `docs:`, `chore:` ...).
 - Run `pnpm check` (typecheck, lint, tests, store builds) before pushing.
@@ -12,3 +13,5 @@
 - `pnpm dev` output is for local work only: WXT adds permissions for live reload. Store packages
   come only from the release workflow; `pnpm zip` is for testing them locally.
 - Never paste a real API key into code, tests, fixtures, issues or pull requests.
+- A change people will notice gets a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md).
+- Releases follow [RELEASING.md](RELEASING.md).

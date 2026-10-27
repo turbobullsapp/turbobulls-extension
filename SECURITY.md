@@ -6,6 +6,16 @@ Please report security problems privately: use **Report a vulnerability** on thi
 Security tab, or email hello@turbobulls.com. Do not open a public issue. Never paste an API key
 into an issue, even a revoked one.
 
+## Supported versions
+
+Only the latest release gets fixes, security fixes included. Updating is the fix for a problem
+found in an older version.
+
+| Version | Fixes |
+|---|---|
+| 1.x (latest) | Yes |
+| Older | No |
+
 ## What the extension is designed to guarantee
 
 - **It cannot see any page.** No content scripts, no `tabs`, `scripting` or page host permissions.
@@ -49,5 +59,6 @@ Keep your computer and browser up to date.
 
 ## Releases
 
-Releases are built by GitHub Actions from tagged commits; the store packages are made from those
-builds.
+Releases are built by GitHub Actions from tagged commits of `main`, after a maintainer approves
+them, and the store packages carry a signed record of where they were built.
+[RELEASING.md](RELEASING.md) has the rules and the commands to check a release yourself.
