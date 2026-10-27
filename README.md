@@ -96,7 +96,7 @@ it yourself, see [Development](#development).
 
 What you can price depends on your plan with the provider.
 
-## Supported providers
+## Providers it works with
 
 | Provider | Covers | Notes |
 |---|---|---|
@@ -105,6 +105,10 @@ What you can price depends on your plan with the provider.
 | [Alpha Vantage](https://www.alphavantage.co) | Stocks and ETFs | The free plan allows few requests a day |
 | [Finnhub](https://finnhub.io) | Stocks | Daily prices need a paid plan |
 | [A source of your own](#your-own-sources) | Anything an `https://` address returns as JSON or CSV | No search: you type the symbol |
+
+EODHD, Twelve Data, Alpha Vantage and Finnhub are named only to show which services the Connector
+can ask with your own key. Turbobulls is not affiliated with or endorsed by any of them, and your use
+of each one is under your own plan and its terms.
 
 ## Privacy and security
 
