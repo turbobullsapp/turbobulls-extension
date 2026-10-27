@@ -41,7 +41,7 @@ prices come back.
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/settings-dark.png">
-    <img src="docs/images/settings-light.png" width="720" alt="The Turbobulls Connector settings page: setup in three steps and your API keys">
+    <img src="docs/images/settings-light.png" width="720" alt="The Turbobulls Connector settings page, all set: one key saved, the other providers without a key, and a source of your own">
   </picture>
 </p>
 
@@ -86,8 +86,9 @@ it yourself, see [Development](#development).
 
 ## Getting started
 
-1. **Add your key.** Click the extension's icon. On the settings page that opens, paste your
-   provider's API key and press **Save**. The extension checks the key with one small request.
+1. **Add your key.** Click the extension's icon. On the settings page that opens, press **Add key**
+   next to your provider, paste its API key and press **Save and test**. The extension checks the
+   key with one small request.
 2. **Find the Connector in Turbobulls.** Open **Settings > Custom data sources**: the extension
    shows as ready, with the providers you set up.
 3. **Price an asset.** Add a custom asset, choose **From a custom data source**, search for the
