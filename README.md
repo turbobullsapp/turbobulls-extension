@@ -132,6 +132,20 @@ answers JSON or CSV. Give it a name, the address with placeholders (`{SYMBOL}`, 
 format, the currency, and a key if the source needs one. **Try it** fetches the last 30 days and
 shows what it read, or why nothing matched.
 
+New to this? **Fill in the ECB example** on the settings page sets up a free public feed to start
+from: one euro in US dollars, from the European Central Bank.
+
+<details>
+<summary>See the form with the ECB example filled in</summary>
+<br>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/own-source-dark.png">
+    <img src="docs/images/own-source-light.png" width="776" alt="The Add a source form filled in with the European Central Bank example: a name, the address with its placeholders, the symbol label, CSV as the format, and the date and price columns">
+  </picture>
+</p>
+</details>
+
 In Turbobulls the source appears among your custom data sources, without search: you type the
 symbol, and the source's settings can say what to type ("Fund code"). Turbobulls sees the source's
 name, never its address or key. Give the extension the address the data finally comes from, since
