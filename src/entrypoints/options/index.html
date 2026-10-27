@@ -19,16 +19,12 @@
         <p>Prices from your own market-data provider, with your own API key. Your keys stay in this browser, on this device.</p>
       </div>
 
-      <section id="next" class="card next" hidden aria-labelledby="next-title">
-        <div class="card-body">
-          <h2 id="next-title">Next: add an asset in Turbobulls</h2>
-          <p>
-            Your provider is ready. In Turbobulls, add a custom asset and choose
-            <strong>From my data provider</strong>; its prices then stay up to date while Turbobulls is
-            open in this browser.
-          </p>
-          <a id="next-link" class="button primary" target="_blank" rel="noopener noreferrer">Open Turbobulls</a>
+      <section class="card" aria-labelledby="setup">
+        <div class="card-head">
+          <h2 id="setup">Set up in three steps</h2>
+          <span class="desc" id="setup-progress"></span>
         </div>
+        <ol id="steps" class="steps"></ol>
       </section>
 
       <section class="card" aria-labelledby="keys">
@@ -47,14 +43,12 @@
         <div id="sources"></div>
       </section>
 
-      <section class="card" aria-labelledby="how">
-        <div class="card-head"><h2 id="how">How it works</h2></div>
+      <section class="card" aria-labelledby="privacy">
+        <div class="card-head"><h2 id="privacy">What Turbobulls sees</h2></div>
         <div class="card-body">
           <ul>
-            <li>Paste the key of the provider you pay for, or add a source of your own. Chrome asks once before the extension may reach a new site.</li>
-            <li>In Turbobulls, add a custom asset and choose <strong>From my data provider</strong>.</li>
-            <li>Turbobulls asks this extension for prices; the extension asks your provider and passes back only the prices.</li>
-            <li>Turbobulls never sees your keys. This extension cannot read any web page, Turbobulls included.</li>
+            <li>Turbobulls never sees your keys, or the addresses of your own sources: only their names, and the prices.</li>
+            <li>This extension cannot read any web page, Turbobulls included. Chrome asks you before it may reach a new site.</li>
           </ul>
         </div>
       </section>

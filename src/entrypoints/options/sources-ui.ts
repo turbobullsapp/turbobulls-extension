@@ -25,6 +25,22 @@ interface Form {
   testSymbol: HTMLInputElement
 }
 
+/** A free, keyless public feed to start from: the European Central Bank's daily exchange rates. */
+const ECB_EXAMPLE = {
+  name: 'Euro in US dollars (ECB)',
+  url: 'https://data-api.ecb.europa.eu/service/data/EXR/D.{SYMBOL}.EUR.SP00.A?format=csvdata&startPeriod={FROM}&endPeriod={TO}',
+  format: 'csv',
+  csvDate: 'TIME_PERIOD',
+  csvClose: 'OBS_VALUE',
+  currency: 'USD',
+  symbolHint: 'USD, the currency of the prices',
+  testSymbol: 'USD',
+} as const
+
+function stepTitle(text: string): HTMLElement {
+  return el('h4', { className: 'form-step' }, text)
+}
+
 function buildForm(existing: CustomSource | undefined, hasKey: boolean): Form {
   const name = input({ value: existing?.name ?? '', placeholder: 'My pension fund', maxLength: 40 })
   const url = input({ value: existing?.url ?? '', placeholder: 'https://api.example.com/prices/{SYMBOL}?from={FROM}&to={TO}' })
@@ -88,22 +104,47 @@ function buildForm(existing: CustomSource | undefined, hasKey: boolean): Form {
   format.addEventListener('change', showFormat)
   showFormat()
 
+  const fillExample = () => {
+    name.value = ECB_EXAMPLE.name
+    url.value = ECB_EXAMPLE.url
+    format.value = ECB_EXAMPLE.format
+    csvDate.value = ECB_EXAMPLE.csvDate
+    csvClose.value = ECB_EXAMPLE.csvClose
+    delimiter.value = ','
+    dateFormat.value = 'YYYY-MM-DD'
+    decimal.value = '.'
+    currency.value = ECB_EXAMPLE.currency
+    symbolHint.value = ECB_EXAMPLE.symbolHint
+    testSymbol.value = ECB_EXAMPLE.testSymbol
+    showFormat()
+  }
+  const exampleButton = el('button', { type: 'button' }, 'Fill in the ECB example')
+  exampleButton.addEventListener('click', fillExample)
+
   const root = el(
     'div',
     { className: 'source-form' },
+    ...(existing
+      ? []
+      : [el('div', { className: 'examples' }, 'New to this? Start from a free public feed: one euro in US dollars, from the European Central Bank.', exampleButton)]),
+    stepTitle('1. Where to ask'),
     field('Name', name, 'What Turbobulls shows for this source.'),
-    field('Address', url, 'Placeholders: {SYMBOL}, {FROM} and {TO} (dates), {FROM_UNIX} and {TO_UNIX}, {KEY}.'),
+    field('Address', url, 'The https address that answers with prices. Placeholders: {SYMBOL}, {FROM} and {TO} (dates), {FROM_UNIX} and {TO_UNIX}, {KEY}.'),
+    field('Symbol label', symbolHint, 'Optional: what Turbobulls asks you to type in place of {SYMBOL}, like "Fund code".'),
+    stepTitle('2. What it answers'),
     field('Format', format),
     jsonFields,
     csvFields,
+    stepTitle('3. How it writes dates and prices'),
     field('Date format', dateFormat),
     field('Decimal separator', decimal),
-    field('Currency', currency, 'Three letters, or GBp for prices in pence.'),
-    field('Symbol label', symbolHint, 'Optional: what Turbobulls asks you to type, like "Fund code".'),
-    field('Key header', header, 'Optional: the header that carries the key.'),
+    field('Currency', currency, 'The currency its prices are in: three letters, or GBp for pence.'),
+    stepTitle('4. A key, only if it needs one'),
+    field('Key header', header, 'The header that carries the key, if the source wants one.'),
     field('Header value', headerTemplate, 'Where the key goes, like {KEY} or Bearer {KEY}.'),
-    field('Key', key),
-    field('Try with symbol', testSymbol),
+    field('Key', key, 'Kept in this browser only.'),
+    stepTitle('5. Check it'),
+    field('Try with symbol', testSymbol, 'Fetches the last 30 days, so you can check the prices before you save.'),
   )
 
   const read = (): Record<string, unknown> => {

@@ -176,21 +176,77 @@ h1 {
   margin-top: 6px;
 }
 
-/* The next step: tinted like the app's info notices. */
-.card.next {
-  background: var(--tb-brand-soft);
-  border-color: var(--tb-info-border);
+/* The setup steps: a numbered list that ticks itself off. */
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0 16px;
 }
 
-.card.next h2 {
-  margin: 0 0 4px;
-  font-size: 15px;
+.step {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  padding: 14px 0;
+}
+
+.step + .step {
+  border-top: 1px solid var(--tb-border);
+}
+
+.step h3 {
+  margin: 2px 0 4px;
+  font-size: 14px;
   font-weight: 600;
 }
 
-.card.next p {
-  margin: 0 0 12px;
+.step p {
+  margin: 0 0 10px;
   color: var(--tb-text-secondary);
+}
+
+.step p:last-child {
+  margin-bottom: 0;
+}
+
+.step.upcoming h3,
+.step.upcoming p {
+  color: var(--tb-text-tertiary);
+}
+
+.marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--tb-border-strong);
+  color: var(--tb-text-tertiary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.step.current .marker {
+  background: var(--tb-brand);
+  border-color: var(--tb-brand);
+  color: #ffffff;
+}
+
+.step.done .marker {
+  background: var(--tb-ok-bg);
+  border-color: var(--tb-ok-border);
+}
+
+/* A check mark drawn with two borders. */
+.step.done .marker::after {
+  content: '';
+  width: 5px;
+  height: 10px;
+  margin-top: -2px;
+  border-right: 2px solid var(--tb-ok);
+  border-bottom: 2px solid var(--tb-ok);
+  transform: rotate(45deg);
 }
 
 /* Dense lists: rows split by hairlines, not cards in cards. */
@@ -434,4 +490,33 @@ footer {
 
 footer a {
   color: var(--tb-text-tertiary);
+}
+
+/* Section titles inside the source form. */
+.form-step {
+  margin: 8px 0 -4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--tb-text-tertiary);
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--tb-surface-subtle);
+  border: 1px solid var(--tb-border);
+  font-size: 13px;
+  color: var(--tb-text-secondary);
+}
+
+.examples button {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
 }

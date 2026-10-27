@@ -2,13 +2,13 @@ import '@fontsource-variable/geist'
 import '@fontsource-variable/bricolage-grotesque/wdth.css'
 import { browser } from 'wxt/browser'
 import { getKey, keyHints, setKey } from '../../keys'
-import { linkAssetUrl } from '../../origins'
 import { dispatch } from '../../shared/dispatch.js'
 import { PROVIDER_IDS, type ProviderId } from '../../shared/protocol/types.js'
 import { ADAPTERS } from '../../shared/providers/registry.js'
-import { getCustomSources, reconcileSitePermissions } from '../../sources'
+import { reconcileSitePermissions } from '../../sources'
 import { el, setStatus } from './dom'
 import { renderSources } from './sources-ui'
+import { renderSteps, watchSteps } from './steps'
 
 /** Where each provider hands out keys. */
 const KEY_PAGES: Record<ProviderId, string> = {
@@ -24,17 +24,6 @@ async function testKey(provider: ProviderId): Promise<{ ok: boolean; text: strin
     { connector: 'extension', version: browser.runtime.getManifest().version, getKey, fetch: (url, init) => fetch(url, init) },
   )
   return answer.ok ? { ok: true, text: `${ADAPTERS[provider].name} accepted the key.` } : { ok: false, text: answer.error.message }
-}
-
-/** Show the next step once anything is set up: the user's way into the app. */
-async function refreshNextStep(): Promise<void> {
-  const next = document.getElementById('next')
-  const link = document.getElementById('next-link')
-  if (!next || !(link instanceof HTMLAnchorElement)) return
-  link.href = linkAssetUrl(import.meta.env.MODE)
-  const hints = await keyHints()
-  const sources = await getCustomSources()
-  next.hidden = Object.keys(hints).length === 0 && sources.length === 0
 }
 
 function renderProvider(provider: ProviderId, hint: string | undefined): HTMLElement {
@@ -78,7 +67,6 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
     setStatus(status, 'Saved. Checking it with one small request...')
     const result = await testKey(provider)
     setStatus(status, result.text, result.ok ? 'ok' : 'error')
-    await refreshNextStep()
   })
   test.addEventListener('click', async () => {
     test.disabled = true
@@ -91,7 +79,6 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
     await setKey(provider, '')
     refresh(undefined)
     setStatus(status, 'Key removed from this browser.')
-    await refreshNextStep()
   })
 
   return el(
@@ -118,8 +105,13 @@ async function main() {
   await reconcileSitePermissions().catch(() => undefined)
   const hints = await keyHints()
   container.replaceChildren(...PROVIDER_IDS.map((p) => renderProvider(p, hints[p])))
-  await renderSources(sources, () => void refreshNextStep())
-  await refreshNextStep()
+  await renderSources(sources, () => undefined)
+  const steps = document.getElementById('steps')
+  const progress = document.getElementById('setup-progress')
+  if (steps && progress) {
+    await renderSteps(steps, progress)
+    watchSteps(steps, progress)
+  }
   const version = document.getElementById('version')
   if (version) version.textContent = `Version ${browser.runtime.getManifest().version}`
 }

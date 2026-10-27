@@ -27,10 +27,18 @@ const REFUSED: ConnectorResponse = {
  * exact origin again (with its port) and that the sender is the page itself, not a frame inside
  * it, so another extension, a frame or any other page gets nothing.
  */
-export function createExternalHandler(opts: { allowedOrigins: readonly string[]; deps: DispatchDeps }) {
+export function createExternalHandler(opts: {
+  allowedOrigins: readonly string[]
+  deps: DispatchDeps
+  /** Called after prices went to the app, so the settings page can show the setup is complete. */
+  onPricesSent?: () => void | Promise<void>
+}) {
   return async (message: unknown, sender: SenderLike): Promise<ConnectorResponse> => {
     const origin = senderOrigin(sender)
     if (!origin || !opts.allowedOrigins.includes(origin) || sender.frameId !== 0) return REFUSED
-    return dispatch(message, opts.deps)
+    const answer = await dispatch(message, opts.deps)
+    const op = typeof message === 'object' && message !== null ? (message as { op?: unknown }).op : undefined
+    if (answer.ok && op === 'history') await Promise.resolve(opts.onPricesSent?.()).catch(() => undefined)
+    return answer
   }
 }
