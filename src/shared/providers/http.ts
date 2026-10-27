@@ -8,6 +8,12 @@ export interface JsonAnswer {
   body: unknown
 }
 
+export interface TextAnswer {
+  status: number
+  headers: { get(name: string): string | null }
+  text: string
+}
+
 const DEFAULT_TIMEOUT_MS = 30_000
 
 /** Largest answer read for a search or a lookup. */
@@ -56,39 +62,42 @@ async function readText(res: HttpResponseLike, maxBytes: number, providerName: s
   return new TextDecoder('utf-8').decode(all)
 }
 
+export interface GetOptions {
+  maxBytes?: number
+  /** 'follow' only for a request that carries no key; the default refuses redirects. */
+  redirect?: 'error' | 'follow'
+  accept?: string
+}
+
 /**
- * GET a provider URL and parse the answer. Redirects are refused: a key travels only to the host
- * it was built for, never to wherever a redirect points. Network failures and timeouts become a
- * PROVIDER_ERROR that names the provider only, never the URL, which can carry the key for
- * providers that only accept it as a query parameter.
+ * GET a URL and read the answer as text. Redirects are refused unless the caller says the request
+ * carries no key: a key travels only to the host it was built for, never to wherever a redirect
+ * points. No cookies are ever sent. Network failures and timeouts become a PROVIDER_ERROR that
+ * names the source only, never the URL, which can carry a key for sources that only accept it as a
+ * query parameter.
  */
-export async function getJson(
+export async function getText(
   ctx: ProviderContext,
   providerName: string,
   url: string,
   headers: Record<string, string> = {},
-  maxBytes: number = SMALL_ANSWER_BYTES,
-): Promise<JsonAnswer> {
+  options: GetOptions = {},
+): Promise<TextAnswer> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), ctx.timeoutMs ?? DEFAULT_TIMEOUT_MS)
   try {
     const res = await ctx.fetch(url, {
       method: 'GET',
-      headers: { Accept: 'application/json', ...headers },
+      headers: { Accept: options.accept ?? 'application/json', ...headers },
       signal: controller.signal,
-      redirect: 'error',
+      redirect: options.redirect ?? 'error',
+      credentials: 'omit',
     })
     if (res.status >= 300 && res.status < 400) {
       throw new ConnectorError('PROVIDER_ERROR', `${providerName} answered with a redirect, which the connector does not follow.`)
     }
-    const text = await readText(res, maxBytes, providerName, () => controller.abort())
-    let body: unknown
-    try {
-      body = text.length > 0 ? JSON.parse(text) : undefined
-    } catch {
-      body = undefined
-    }
-    return { status: res.status, headers: res.headers, body }
+    const text = await readText(res, options.maxBytes ?? SMALL_ANSWER_BYTES, providerName, () => controller.abort())
+    return { status: res.status, headers: res.headers, text }
   } catch (e) {
     if (e instanceof ConnectorError) throw e
     if (controller.signal.aborted) {
@@ -98,6 +107,24 @@ export async function getJson(
   } finally {
     clearTimeout(timer)
   }
+}
+
+/** GET a provider URL and parse the answer as JSON (see getText for the rules it follows). */
+export async function getJson(
+  ctx: ProviderContext,
+  providerName: string,
+  url: string,
+  headers: Record<string, string> = {},
+  maxBytes: number = SMALL_ANSWER_BYTES,
+): Promise<JsonAnswer> {
+  const answer = await getText(ctx, providerName, url, headers, { maxBytes })
+  let body: unknown
+  try {
+    body = answer.text.length > 0 ? JSON.parse(answer.text) : undefined
+  } catch {
+    body = undefined
+  }
+  return { status: answer.status, headers: answer.headers, body }
 }
 
 /** Seconds from a Retry-After header (seconds or an HTTP date), or the fallback; 1 second to 1 day. */

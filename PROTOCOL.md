@@ -72,8 +72,8 @@ No parameters. Tells the app which connector this is and which providers have a 
 
 ### search
 
-Parameters: `provider` (`eodhd`, `twelvedata`, `alphavantage`, `finnhub`) and `query` (1 to 64
-characters, at least one letter or digit).
+Parameters: `provider` (`eodhd`, `twelvedata`, `alphavantage`, `finnhub`, or a custom source, which
+cannot search; see Custom sources) and `query` (1 to 64 characters, at least one letter or digit).
 
 ```json
 { "results": [ { "symbol": "TSCO.LSE", "name": "Tesco PLC", "exchange": "LSE", "currency": "GBP", "type": "Common Stock", "isin": "GB00BLGZ9862" } ] }
@@ -106,11 +106,37 @@ Parameters: `provider`, `symbol` (as a search returned it), `from` and optionall
 No parameters. The extension opens its settings page and answers `{ "opened": true }`. The bridge
 answers `UNSUPPORTED_OPERATION`; its keys live in its config file.
 
+## Custom sources
+
+Besides the four built-in providers, a user can define their own sources in a connector: a web
+address with placeholders, the format of the answer (JSON or CSV), where the date and the price sit
+in it, and the currency. They are defined only in the connector (the extension's settings page or
+the bridge's config file); the app cannot add, change or read them, and never sends an address.
+
+A custom source appears in `hello.providers` like this:
+
+```json
+{ "id": "mypension", "name": "My pension fund", "configured": true, "custom": true, "symbolHint": "Fund code", "capabilities": { "search": false, "history": true } }
+```
+
+- `id`: 2 to 32 lower-case letters and digits, starting with a letter, never a built-in id.
+- `custom: true` marks it; `symbolHint` (optional, up to 64 characters) is how the user described
+  what to type as the symbol, for the app to use as the label of its symbol box.
+- `search` on a custom source answers `UNSUPPORTED_OPERATION`: the user types the symbol.
+- `history` works as for any provider. `symbol` is what the user typed (same character rules as
+  any symbol); the connector puts it into the source's address only where the address asks for it,
+  and answers with the currency the user configured for the source.
+- A connector lists at most 12 custom sources, so `hello` never lists more than 16 providers.
+
+Error codes keep their meaning: `INVALID_KEY` when the source refuses the user's key, `NOT_FOUND`
+for a symbol it does not know, `PROVIDER_ERROR` when its answer has no dates and prices where the
+source settings point.
+
 ## Error codes
 
 | Code | Meaning | What the app does |
 |---|---|---|
-| `NOT_CONFIGURED` | No key for this provider in this connector | Ask the user to add the key in the connector |
+| `NOT_CONFIGURED` | No key for this provider, or no custom source with that id, in this connector | Ask the user to set it up in the connector |
 | `INVALID_KEY` | The provider refused the key | Stop asking this provider until the user changes the key |
 | `PLAN_LIMIT` | The user's plan does not include this data | Tell the user; do not retry soon |
 | `RATE_LIMITED` | The provider asked to slow down, or today's allowance is used up | Wait `retryAfter` seconds before asking this provider again |

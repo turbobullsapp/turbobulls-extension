@@ -3,6 +3,7 @@ import { defineBackground } from 'wxt/utils/define-background'
 import { createExternalHandler } from '../external'
 import { getKey } from '../keys'
 import { allowedOrigins } from '../origins'
+import { canReach, getCustomSources } from '../sources'
 
 export default defineBackground(() => {
   const handle = createExternalHandler({
@@ -11,6 +12,8 @@ export default defineBackground(() => {
       connector: 'extension',
       version: browser.runtime.getManifest().version,
       getKey,
+      customSources: getCustomSources,
+      canReach,
       fetch: (url, init) => fetch(url, init),
       openSettings: () => browser.runtime.openOptionsPage(),
     },

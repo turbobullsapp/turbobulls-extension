@@ -1,8 +1,12 @@
 import { browser } from 'wxt/browser'
 import { getKey, keyHints, setKey } from '../../keys'
+import { linkAssetUrl } from '../../origins'
 import { dispatch } from '../../shared/dispatch.js'
 import { PROVIDER_IDS, type ProviderId } from '../../shared/protocol/types.js'
 import { ADAPTERS } from '../../shared/providers/registry.js'
+import { getCustomSources } from '../../sources'
+import { el, setStatus } from './dom'
+import { renderSources } from './sources-ui'
 
 /** Where each provider hands out keys. */
 const KEY_PAGES: Record<ProviderId, string> = {
@@ -10,18 +14,6 @@ const KEY_PAGES: Record<ProviderId, string> = {
   twelvedata: 'https://twelvedata.com/account/api-keys',
   alphavantage: 'https://www.alphavantage.co/support/#api-key',
   finnhub: 'https://finnhub.io/dashboard',
-}
-
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}, ...children: (Node | string)[]) {
-  const node = document.createElement(tag)
-  Object.assign(node, props)
-  node.append(...children)
-  return node
-}
-
-function setStatus(node: HTMLElement, text: string, kind: 'ok' | 'error' | 'info' = 'info') {
-  node.textContent = text
-  node.className = `status ${kind === 'info' ? '' : kind}`.trim()
 }
 
 async function testKey(provider: ProviderId): Promise<{ ok: boolean; text: string }> {
@@ -32,6 +24,17 @@ async function testKey(provider: ProviderId): Promise<{ ok: boolean; text: strin
   return answer.ok ? { ok: true, text: `${ADAPTERS[provider].name} accepted the key.` } : { ok: false, text: answer.error.message }
 }
 
+/** Show the next step once anything is set up: the user's way into the app. */
+async function refreshNextStep(): Promise<void> {
+  const next = document.getElementById('next')
+  const link = document.getElementById('next-link')
+  if (!next || !(link instanceof HTMLAnchorElement)) return
+  link.href = linkAssetUrl(import.meta.env.MODE)
+  const hints = await keyHints()
+  const sources = await getCustomSources()
+  next.hidden = Object.keys(hints).length === 0 && sources.length === 0
+}
+
 function renderProvider(provider: ProviderId, hint: string | undefined): HTMLElement {
   const name = ADAPTERS[provider].name
   const inputId = `key-${provider}`
@@ -40,8 +43,6 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
   status.setAttribute('aria-live', 'polite')
   const input = el('input', { id: inputId, type: 'password', autocomplete: 'off', spellcheck: false, placeholder: 'Paste your API key' })
   const label = el('label', { htmlFor: inputId, className: 'visually-hidden' }, `${name} API key`)
-  label.style.position = 'absolute'
-  label.style.left = '-9999px'
   const show = el('button', { type: 'button' }, 'Show')
   const save = el('button', { type: 'button', className: 'primary' }, 'Save')
   const test = el('button', { type: 'button' }, 'Test key')
@@ -71,6 +72,7 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
     setStatus(status, 'Saved. Checking it with one small request...')
     const result = await testKey(provider)
     setStatus(status, result.text, result.ok ? 'ok' : 'error')
+    await refreshNextStep()
   })
   test.addEventListener('click', async () => {
     test.disabled = true
@@ -83,6 +85,7 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
     await setKey(provider, '')
     refresh(undefined)
     setStatus(status, 'Key removed from this browser.')
+    await refreshNextStep()
   })
 
   return el(
@@ -102,9 +105,12 @@ function renderProvider(provider: ProviderId, hint: string | undefined): HTMLEle
 
 async function main() {
   const container = document.getElementById('providers')
-  if (!container) return
+  const sources = document.getElementById('sources')
+  if (!container || !sources) return
   const hints = await keyHints()
   container.replaceChildren(...PROVIDER_IDS.map((p) => renderProvider(p, hints[p])))
+  await renderSources(sources, () => void refreshNextStep())
+  await refreshNextStep()
   const version = document.getElementById('version')
   if (version) version.textContent = `Version ${browser.runtime.getManifest().version}`
 }

@@ -1,6 +1,7 @@
 import { addDays, isIsoDate, todayUtc } from './dates.js'
 import { ConnectorError } from './errors.js'
 import {
+  CUSTOM_ID_RE,
   LIMITS,
   OPS,
   PROTOCOL_VERSION,
@@ -9,6 +10,7 @@ import {
   type Op,
   type ProviderId,
   type SearchParams,
+  type SourceId,
 } from './types.js'
 
 /** A request whose envelope and parameters have been checked. */
@@ -39,8 +41,13 @@ export function isProviderId(value: unknown): value is ProviderId {
   return typeof value === 'string' && (PROVIDER_IDS as readonly string[]).includes(value)
 }
 
-function readProvider(params: Record<string, unknown>): ProviderId {
-  if (!isProviderId(params.provider)) throw bad('Unknown provider.')
+/** A built-in provider's id, or one shaped like a custom source's id (whether it exists is checked later). */
+export function isSourceId(value: unknown): value is SourceId {
+  return isProviderId(value) || (typeof value === 'string' && CUSTOM_ID_RE.test(value))
+}
+
+function readProvider(params: Record<string, unknown>): SourceId {
+  if (!isSourceId(params.provider)) throw bad('Unknown provider.')
   return params.provider
 }
 

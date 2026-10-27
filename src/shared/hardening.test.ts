@@ -98,7 +98,7 @@ describe('untrusted provider text', () => {
     expect(
       sanitizeSearchResult({
         symbol: 'AAPL.US',
-        name: `Apple\u0000 Inc‮ ${'x'.repeat(300)}`,
+        name: `Apple\u0000 Inc\u202e ${'x'.repeat(300)}`,
         exchange: 'US',
         currency: '{}',
         isin: 'not-an-isin',

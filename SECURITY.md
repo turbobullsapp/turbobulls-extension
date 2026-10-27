@@ -15,9 +15,16 @@ into an issue, even a revoked one.
   background checks again that the sender is the app's own top-level page (its exact origin, not
   a frame, not a sandboxed page reporting origin "null"), and other extensions are refused.
 - **It cannot be used as a proxy.** No message carries a URL. The extension builds each provider
-  request itself, and its host permissions cover only the four provider APIs. It never follows a
-  redirect, so a key cannot be carried to another host, and it stops reading any answer past a size
-  limit.
+  request itself, for the four provider APIs and the sources you added on its settings page; the
+  app can only name a source, never add one or change its address. A symbol is encoded and can
+  never change the host. Redirects are never followed for a request that carries a key, so a key
+  cannot be carried to another host, and the extension stops reading any answer past a size limit.
+  No request ever sends cookies.
+- **Your own sources reach only the sites you allowed.** The manifest can ask for `https://` sites
+  only as optional permissions, one site at a time, when you save a source; Chrome asks you first.
+  Before each request the extension checks that the site is still allowed, and removing a source
+  gives back a site no other source uses. A site permission lets the extension fetch from that
+  site; it still cannot read or change any page.
 - **Your keys stay in your browser.** They live in `storage.local`: this device only, never
   synced, readable only by this extension. A key is sent only to its own provider, as a header
   where the provider accepts one (EODHD, Twelve Data, Finnhub). Alpha Vantage only accepts it in

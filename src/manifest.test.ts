@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEV_EXTENSION_ID, DEV_PUBLIC_KEY } from './dev-key'
-import { buildManifest, PROVIDER_HOSTS } from './manifest'
+import { buildManifest, OPTIONAL_HOSTS, PROVIDER_HOSTS } from './manifest'
 
 describe('manifest', () => {
   it('asks for storage and the four provider APIs, nothing more', () => {
@@ -8,7 +8,12 @@ describe('manifest', () => {
     expect(m.permissions).toEqual(['storage'])
     expect(m.host_permissions).toEqual([...PROVIDER_HOSTS])
     expect(m).not.toHaveProperty('content_scripts')
-    expect(m).not.toHaveProperty('optional_host_permissions')
+    expect(m).not.toHaveProperty('optional_permissions')
+  })
+
+  it('may only ask, later and one site at a time, for https sites the user adds as sources', () => {
+    expect(buildManifest('production').optional_host_permissions).toEqual([...OPTIONAL_HOSTS])
+    expect(OPTIONAL_HOSTS).toEqual(['https://*/*'])
   })
 
   it('lets only the Turbobulls app message it, and carries no dev key in a store build', () => {

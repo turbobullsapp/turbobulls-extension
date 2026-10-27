@@ -14,8 +14,9 @@ Chrome and Edge. For Firefox, or if you prefer a program to an extension, use
 
 | Permission | Why |
 |---|---|
-| `storage` | To keep your API keys in this browser, on this device. Never synced to your browser account. |
-| `eodhd.com`, `api.twelvedata.com`, `www.alphavantage.co`, `finnhub.io` | To call your provider's API. Nothing else. |
+| `storage` | To keep your API keys and your own sources in this browser, on this device. Never synced to your browser account. |
+| `eodhd.com`, `api.twelvedata.com`, `www.alphavantage.co`, `finnhub.io` | To call your provider's API. |
+| Optional: one `https://` site at a time | Only when you add your own source, and only for its site. Chrome asks you first; removing the source gives the permission back. |
 
 - **It cannot read any web page**, Turbobulls included. It has no content scripts and no access to
   your tabs.
@@ -46,6 +47,20 @@ which knows the development id (see Development below).
 Turbobulls refreshes linked prices while the app is open in a browser with the extension, and your
 other devices (your phone included) receive them through the app's normal encrypted sync. What you
 can price depends on your plan with the provider.
+
+## Your own sources
+
+For prices none of the four providers carry (a pension fund's daily price, a small exchange, a
+spreadsheet you keep yourself), add a source on the settings page: any `https://` address that
+answers JSON or CSV. You give it a name, the address with placeholders (`{SYMBOL}`, `{FROM}`,
+`{TO}`, `{FROM_UNIX}`, `{TO_UNIX}`, `{KEY}`), where the date and the price sit in the answer, the
+date format, the currency, and a key if the source needs one. **Try it** fetches the last 30 days
+and shows what it read, or why nothing matched.
+
+In Turbobulls, the source appears among your data providers. It has no search: you type the symbol
+(the source's settings can say what to type, like "Fund code"). Use only sources whose terms allow
+this use. The settings mirror the bridge's config format, described in the
+[turbobulls-bridge README](https://github.com/turbobullsapp/turbobulls-bridge#custom-sources).
 
 ## How it works
 

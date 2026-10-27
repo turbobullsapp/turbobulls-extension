@@ -5,8 +5,14 @@
 
 export const PROTOCOL_VERSION = 1
 
+/** The built-in providers. */
 export const PROVIDER_IDS = ['eodhd', 'twelvedata', 'alphavantage', 'finnhub'] as const
 export type ProviderId = (typeof PROVIDER_IDS)[number]
+
+/** A custom source's id: 2 to 32 lower-case letters and digits, starting with a letter. */
+export const CUSTOM_ID_RE = /^[a-z][a-z0-9]{1,31}$/
+/** A built-in provider's id or a custom source's id. */
+export type SourceId = string
 
 export const OPS = ['hello', 'search', 'history', 'openSettings'] as const
 export type Op = (typeof OPS)[number]
@@ -34,6 +40,8 @@ export const LIMITS = {
   queryLength: 64,
   symbolLength: 64,
   requestIdLength: 64,
+  /** Most custom sources one connector lists, so hello never lists more than 16 providers. */
+  customSources: 12,
 } as const
 
 export interface ConnectorRequest {
@@ -55,10 +63,14 @@ export type ConnectorResponse =
   | { id: string; ok: false; error: ConnectorErrorBody }
 
 export interface ProviderInfo {
-  id: ProviderId
+  id: SourceId
   name: string
   configured: boolean
   capabilities: { search: boolean; history: boolean }
+  /** Set on a source the user defined in the connector. */
+  custom?: true
+  /** For a custom source: what to type as the symbol, as the user described it. */
+  symbolHint?: string
 }
 
 export interface HelloResult {
@@ -69,7 +81,7 @@ export interface HelloResult {
 }
 
 export interface SearchParams {
-  provider: ProviderId
+  provider: SourceId
   query: string
 }
 
@@ -90,7 +102,7 @@ export interface SearchAnswer {
 }
 
 export interface HistoryParams {
-  provider: ProviderId
+  provider: SourceId
   symbol: string
   /** First date wanted, YYYY-MM-DD. */
   from: string

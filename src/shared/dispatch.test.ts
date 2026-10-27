@@ -10,7 +10,7 @@ function deps(over: Partial<DispatchDeps> = {}, keys: Partial<Record<ProviderId,
   return {
     connector: 'bridge',
     version: '0.1.0',
-    getKey: (id) => keys[id],
+    getKey: (id) => (Object.hasOwn(keys, id) ? keys[id as ProviderId] : undefined),
     fetch: fakeFetch([]).fetch,
     now: NOW,
     ...over,

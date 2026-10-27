@@ -17,6 +17,12 @@ function matchPattern(origin: string): string {
 }
 
 /**
+ * Sites the user may let the extension reach, one at a time, for custom sources they add on the
+ * settings page. Asked for per site when a source is saved, never at install.
+ */
+export const OPTIONAL_HOSTS = ['https://*/*'] as const
+
+/**
  * The manifest. No content scripts and no page permissions: the extension cannot read any page,
  * the app included. The app reaches it only through `externally_connectable`.
  */
@@ -27,6 +33,7 @@ export function buildManifest(mode: string) {
     description: 'Prices from your own market-data provider, with your own API key, for Turbobulls. Your key stays in your browser.',
     permissions: ['storage'],
     host_permissions: [...PROVIDER_HOSTS],
+    optional_host_permissions: [...OPTIONAL_HOSTS],
     externally_connectable: { matches: allowedOrigins(mode).map(matchPattern) },
     action: { default_title: 'Turbobulls Connector settings' },
     icons: { 16: '/icon/16.png', 32: '/icon/32.png', 48: '/icon/48.png', 128: '/icon/128.png' },

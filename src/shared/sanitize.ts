@@ -6,7 +6,7 @@ export const TEXT_MAX = 200
 
 // Control characters and the bidirectional overrides that can make text display out of order.
 // eslint-disable-next-line no-control-regex
-const UNSAFE_CHARS = /[\u0000-\u001f\u007f-\u009f‪-‮⁦-⁩]/g
+const UNSAFE_CHARS = /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g
 const ISO_CURRENCY = /^[A-Z]{3}$/
 const ISIN = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/
 

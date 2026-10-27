@@ -14,8 +14,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
-    "dev-id": "node scripts/extension-id.mjs"
+    "check": "pnpm check:source && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "dev-id": "node scripts/extension-id.mjs",
+    "check:source": "node scripts/check-source.mjs src public"
   },
   "repository": {
     "type": "git",

@@ -172,3 +172,99 @@ footer {
 footer a {
   color: var(--muted);
 }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.lead {
+  margin: -4px 0 12px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.next {
+  border-color: var(--accent);
+}
+
+.next p {
+  color: var(--text);
+  margin: 0 0 12px;
+}
+
+a.button {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font: inherit;
+}
+
+a.button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.source-form {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.group {
+  display: grid;
+  gap: 12px;
+}
+
+.group[hidden] {
+  display: none;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.field input,
+.field select {
+  width: 100%;
+}
+
+select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.hint {
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.errors {
+  color: var(--error);
+  font-size: 13px;
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.errors:empty {
+  display: none;
+}
+
+.source-list {
+  margin-bottom: 12px;
+}

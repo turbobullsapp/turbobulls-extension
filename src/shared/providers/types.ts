@@ -10,10 +10,20 @@ export interface HttpResponseLike {
   text(): Promise<string>
 }
 
-/** A fetch the caller passes in: global fetch in Node 22+ and in an extension service worker. */
+/**
+ * A fetch the caller passes in: global fetch in Node 22+ and in an extension service worker.
+ * Requests never carry cookies (`credentials: 'omit'`), and follow redirects only when no key is
+ * involved (`redirect: 'follow'` is used for keyless custom sources alone).
+ */
 export type FetchLike = (
   url: string,
-  init: { method: 'GET'; headers: Record<string, string>; signal: AbortSignal; redirect: 'error' },
+  init: {
+    method: 'GET'
+    headers: Record<string, string>
+    signal: AbortSignal
+    redirect: 'error' | 'follow'
+    credentials: 'omit'
+  },
 ) => Promise<HttpResponseLike>
 
 export interface ProviderContext {

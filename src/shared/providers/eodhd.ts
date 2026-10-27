@@ -50,7 +50,7 @@ function failure(res: JsonAnswer, now: Date): ConnectorError | undefined {
  * repair is kept only when it decodes cleanly.
  */
 export function repairMojibake(name: string): string {
-  if (!/[ÃÂ][\u0080-¿]/.test(name)) return name
+  if (!/[\u00C3\u00C2][\u0080-\u00BF]/.test(name)) return name
   const bytes = new Uint8Array(name.length)
   for (let i = 0; i < name.length; i++) {
     const code = name.charCodeAt(i)
@@ -58,7 +58,7 @@ export function repairMojibake(name: string): string {
     bytes[i] = code
   }
   const repaired = new TextDecoder('utf-8').decode(bytes)
-  return repaired.includes('�') ? name : repaired
+  return repaired.includes('\uFFFD') ? name : repaired
 }
 
 /** Split `AAPL.US` into code and exchange at the last dot (codes can hold dots: `BRK.B.US`). */

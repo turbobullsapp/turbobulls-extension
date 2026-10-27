@@ -6,3 +6,8 @@ export const DEV_ORIGIN = 'http://localhost:3000'
 export function allowedOrigins(mode: string): string[] {
   return mode === 'development' ? [APP_ORIGIN, DEV_ORIGIN] : [APP_ORIGIN]
 }
+
+/** Where a user goes after setting up a key: the app's entry point for linking an asset. */
+export function linkAssetUrl(mode: string): string {
+  return `${mode === 'development' ? DEV_ORIGIN : APP_ORIGIN}/link-asset`
+}
