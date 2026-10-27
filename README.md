@@ -14,6 +14,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/browsers-Chrome%20%7C%20Edge-4285F4.svg" alt="Chrome and Edge">
   <img src="https://img.shields.io/badge/manifest-v3-555.svg" alt="Manifest V3">
+  <a href="https://scorecard.dev/viewer/?uri=github.com/turbobullsapp/turbobulls-extension"><img src="https://api.scorecard.dev/projects/github.com/turbobullsapp/turbobulls-extension/badge" alt="OpenSSF Scorecard"></a>
 </p>
 
 <p align="center">
@@ -22,7 +23,8 @@
   <a href="#privacy-and-security">Privacy and security</a> ·
   <a href="#your-own-sources">Your own sources</a> ·
   <a href="#faq">FAQ</a> ·
-  <a href="#development">Development</a>
+  <a href="#development">Development</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 ---
@@ -239,6 +241,8 @@ package built on your own computer.
 
 The provider code in `src/shared/` is identical in the
 [Connector app](https://github.com/turbobullsapp/turbobulls-bridge); a change there is made in both.
+Releases, and how to check one, are described in [RELEASING.md](RELEASING.md); every change is in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Contributing
 

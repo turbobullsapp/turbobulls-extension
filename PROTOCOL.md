@@ -62,7 +62,7 @@ No parameters. Tells the app which connector this is and which providers have a 
 {
   "protocol": 1,
   "connector": "bridge",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "providers": [
     { "id": "eodhd", "name": "EODHD", "configured": true, "capabilities": { "search": true, "history": true } },
     { "id": "twelvedata", "name": "Twelve Data", "configured": false, "capabilities": { "search": true, "history": true } }

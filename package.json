@@ -1,6 +1,6 @@
 {
   "name": "turbobulls-extension",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Turbobulls Connector: prices from your own market-data provider, with your own API key, for the Turbobulls app.",
   "license": "MIT",
