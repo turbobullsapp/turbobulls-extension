@@ -242,4 +242,11 @@ report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE) © Turbobulls
+The code is released under the [MIT License](LICENSE) © Turbobulls.
+
+The Turbobulls name and logo are not covered by that license. If you publish a copy of the
+extension, give it its own name and icon.
+
+The settings page uses the [Geist](https://github.com/vercel/geist-font) and
+[Bricolage Grotesque](https://github.com/ateliertriay/bricolage) fonts, under the SIL Open Font
+License 1.1. Their license texts ship with the extension, in [public/licenses](public/licenses).
