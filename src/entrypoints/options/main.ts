@@ -29,7 +29,7 @@ async function testKey(provider: ProviderId): Promise<{ ok: boolean; text: strin
 /** What each provider covers, in a line under its name. */
 const COVERS: Record<ProviderId, string> = {
   eodhd: 'Stocks, ETFs and funds on most exchanges',
-  twelvedata: 'Stocks, ETFs, forex and crypto',
+  twelvedata: 'Stocks, ETFs, forex and crypto. Showing prices needs a paid plan',
   alphavantage: 'Stocks and ETFs. The free plan allows few requests a day',
   finnhub: 'Stocks. Daily prices need a paid plan',
 }
