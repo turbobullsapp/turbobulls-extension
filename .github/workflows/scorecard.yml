@@ -2,8 +2,10 @@ name: Scorecard
 
 # The OpenSSF Scorecard: an independent check of how this repository is protected (branch rules,
 # pinned dependencies, reviewed changes, signed releases). Results show on the Security tab and on
-# the badge in the README. It needs a public repository, so it does nothing while private.
+# the badge in the README. It needs a public repository, so it does nothing while private. A
+# maintainer can also run it from the Actions tab.
 on:
+  workflow_dispatch:
   branch_protection_rule:
   schedule:
     - cron: '41 5 * * 2'
