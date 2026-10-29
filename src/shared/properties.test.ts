@@ -38,6 +38,9 @@ const status = fc.oneof(fc.constant(200), fc.integer({ min: 100, max: 599 }))
 /** Symbols the protocol lets through to a provider or a source. */
 const symbol = fc.stringMatching(/^[A-Za-z0-9 .\-_:/^=&+]{1,64}$/).filter(isValidSymbol)
 
+/** A value as a CSV cell: text as it is, anything else as JSON (String() fails on objects without a prototype). */
+const cell = (v: unknown) => (typeof v === 'string' ? v : JSON.stringify(v))
+
 /** Garbage, any JSON, and the shapes the providers and sources really answer with. Some echo the key. */
 const answerText = fc.oneof(
   fc.string({ unit: 'binary' }),
@@ -56,7 +59,7 @@ const answerText = fc.oneof(
     .map((rows) => JSON.stringify({ s: 'ok', t: rows.map(([t]) => t), c: rows.map(([, c]) => c), currency: 'USD' })),
   fc
     .array(fc.tuple(dateish, closeish), { maxLength: 30 })
-    .map((rows) => ['date,close', ...rows.map(([d, c]) => `${String(d)},${String(c)}`)].join('\n')),
+    .map((rows) => ['date,close', ...rows.map(([d, c]) => `${cell(d)},${cell(c)}`)].join('\n')),
 )
 
 /** A fetch that gives every request the same answer. */
