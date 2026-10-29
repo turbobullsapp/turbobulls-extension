@@ -104,7 +104,7 @@ What you can price depends on your plan with the provider.
 | Provider | Covers | Notes |
 |---|---|---|
 | [EODHD](https://eodhd.com) | Stocks, ETFs and funds on most exchanges | |
-| [Twelve Data](https://twelvedata.com) | Stocks, ETFs, forex and crypto | |
+| [Twelve Data](https://twelvedata.com) | Stocks, ETFs, forex and crypto | Showing prices needs a paid plan |
 | [Alpha Vantage](https://www.alphavantage.co) | Stocks and ETFs | The free plan allows few requests a day |
 | [Finnhub](https://finnhub.io) | Stocks | Daily prices need a paid plan |
 | [A source of your own](#your-own-sources) | Anything an `https://` address returns as JSON or CSV | No search: you type the symbol |

@@ -6,6 +6,11 @@ All notable changes are written down here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The line under Twelve Data on the settings page says that showing its prices needs a paid
+  plan.
+
 ## [1.0.0] - 2026-10-27
 
 The first public release. It speaks version 1 of the protocol in [PROTOCOL.md](PROTOCOL.md).
