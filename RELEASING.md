@@ -47,7 +47,9 @@ Only the latest version gets fixes, security fixes included ([SECURITY.md](SECUR
 5. **Upload to the stores.** The GitHub release holds two packages:
    `turbobulls-extension-<version>-chrome.zip` for the Chrome Web Store and
    `turbobulls-extension-<version>-edge.zip` for Edge Add-ons. Upload those two files, never a
-   package built on a computer, with the release's notes as the store's "what's new".
+   package built on a computer, with the release's notes as the store's "what's new". The
+   release's `.sigstore.json` file is their signed record, for people to check a download with; it
+   does not go to the stores.
 
 ## Checking a release
 
@@ -56,6 +58,14 @@ downloaded package with the GitHub CLI:
 
 ```bash
 gh attestation verify turbobulls-extension-1.0.0-chrome.zip --repo turbobullsapp/turbobulls-extension
+```
+
+From 1.0.3 on, each GitHub release also carries that record as a file,
+`turbobulls-extension-<version>.sigstore.json` (one record for both packages), so a download can be
+checked against it without looking the record up on GitHub:
+
+```bash
+gh attestation verify turbobulls-extension-1.0.3-chrome.zip --bundle turbobulls-extension-1.0.3.sigstore.json --repo turbobullsapp/turbobulls-extension
 ```
 
 The stores re-sign what they publish, so this checks the files on the GitHub release, which are
