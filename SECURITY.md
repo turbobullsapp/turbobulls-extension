@@ -60,5 +60,6 @@ Keep your computer and browser up to date.
 ## Releases
 
 Releases are built by GitHub Actions from tagged commits of `main`, after a maintainer approves
-them, and the store packages carry a signed record of where they were built.
+them, and the store packages carry a signed record of where they were built, which each GitHub
+release also has as a file next to them.
 [RELEASING.md](RELEASING.md) has the rules and the commands to check a release yourself.

@@ -6,6 +6,11 @@ All notable changes are written down here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Each GitHub release carries the packages' signed build record as a file,
+  `turbobulls-extension-<version>.sigstore.json`, to check a download against.
+
 ## [1.0.2] - 2026-10-29
 
 ### Changed
