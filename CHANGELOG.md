@@ -6,6 +6,8 @@ All notable changes are written down here. The format follows
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-29
+
 ### Changed
 
 - The line under Twelve Data on the settings page says that showing its prices needs a paid
@@ -25,5 +27,6 @@ The first public release. It speaks version 1 of the protocol in [PROTOCOL.md](P
   each key with one small request, and how your keys and data are kept private.
 - Talks only to `https://app.turbobulls.com`; cannot read any web page.
 
-[Unreleased]: https://github.com/turbobullsapp/turbobulls-extension/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/turbobullsapp/turbobulls-extension/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/turbobullsapp/turbobulls-extension/compare/v1.0.0...v1.0.2
 [1.0.0]: https://github.com/turbobullsapp/turbobulls-extension/releases/tag/v1.0.0
