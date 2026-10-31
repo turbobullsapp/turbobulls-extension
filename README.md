@@ -10,6 +10,7 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/turbobulls-connector/jlpgemghfmjjkcoclddklppdepjnbpge"><img src="https://img.shields.io/chrome-web-store/v/jlpgemghfmjjkcoclddklppdepjnbpge?label=Chrome%20Web%20Store" alt="Chrome Web Store"></a>
   <a href="https://github.com/turbobullsapp/turbobulls-extension/actions/workflows/ci.yml"><img src="https://github.com/turbobullsapp/turbobulls-extension/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/browsers-Chrome%20%7C%20Edge-4285F4.svg" alt="Chrome and Edge">
@@ -78,8 +79,8 @@ normal sync, without an extension of their own.
 
 | Browser | Get it |
 |---|---|
-| Google Chrome | Chrome Web Store (listing coming soon) |
-| Microsoft Edge | Edge Add-ons (listing coming soon) |
+| Google Chrome | [Chrome Web Store](https://chromewebstore.google.com/detail/turbobulls-connector/jlpgemghfmjjkcoclddklppdepjnbpge) |
+| Microsoft Edge | [Chrome Web Store](https://chromewebstore.google.com/detail/turbobulls-connector/jlpgemghfmjjkcoclddklppdepjnbpge): allow extensions from other stores when Edge asks |
 | Firefox, or a program instead of an extension | [Turbobulls Connector app](https://github.com/turbobullsapp/turbobulls-bridge) |
 
 Turbobulls talks only to the store version. A copy you load by hand gets a different extension id,
