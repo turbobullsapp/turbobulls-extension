@@ -130,7 +130,7 @@ function buildForm(existing: CustomSource | undefined, hasKey: boolean): Form {
       : [el('div', { className: 'examples' }, 'New to this? Start from a free public feed: one euro in US dollars, from the European Central Bank.', exampleButton)]),
     stepTitle('1. Where to ask'),
     field('Name', name, 'What Turbobulls shows for this source.'),
-    field('Address', url, 'The https address that answers with prices. Placeholders: {SYMBOL}, {FROM} and {TO} (dates), {FROM_UNIX} and {TO_UNIX}, {KEY}.'),
+    field('Address', url, 'The https address that answers with prices. For a file served on this computer, http://localhost or http://127.0.0.1 works too. Placeholders: {SYMBOL}, {FROM} and {TO} (dates), {FROM_UNIX} and {TO_UNIX}, {KEY}.'),
     field('Symbol label', symbolHint, 'Optional: what Turbobulls asks you to type in place of {SYMBOL}, like "Fund code".'),
     stepTitle('2. What it answers'),
     field('Format', format),

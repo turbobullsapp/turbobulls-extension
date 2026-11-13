@@ -1,6 +1,6 @@
 import { customHistory } from './custom/history.js'
 import type { CustomSource } from './custom/definition.js'
-import { templateHost } from './custom/definition.js'
+import { templateOrigin } from './custom/definition.js'
 import { todayUtc } from './protocol/dates.js'
 import { ConnectorError, isConnectorError } from './protocol/errors.js'
 import { LIMITS, PROTOCOL_VERSION, PROVIDER_IDS } from './protocol/types.js'
@@ -21,7 +21,8 @@ export interface DispatchDeps {
   /** The custom sources the user defined in this connector, already checked. */
   customSources?: () => readonly CustomSource[] | Promise<readonly CustomSource[]>
   /**
-   * Whether the connector may reach this origin (`https://host`). The extension asks the browser
+   * Whether the connector may reach this origin (`https://host[:port]`, or `http://localhost:port`
+   * for a source on this computer). The extension asks the browser
    * for its granted host permissions; the bridge can reach anything and leaves this out.
    */
   canReach?: (origin: string) => boolean | Promise<boolean>
@@ -122,7 +123,7 @@ export async function dispatch(input: unknown, deps: DispatchDeps): Promise<Conn
         const source = (await customSourcesOf(deps)).find((s) => s.id === provider)
         if (!source) throw new ConnectorError('NOT_CONFIGURED', 'This connector has no source with that id.')
         // The message names the source, never its site: the app must not learn where a source lives.
-        if (deps.canReach && !(await deps.canReach(`https://${templateHost(source.url) ?? ''}`))) {
+        if (deps.canReach && !(await deps.canReach(templateOrigin(source.url) ?? ''))) {
           throw new ConnectorError(
             'NOT_CONFIGURED',
             `The browser has not let the connector reach ${source.name} yet. Open the connector's settings and save that source again.`,

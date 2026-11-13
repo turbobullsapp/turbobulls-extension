@@ -31,8 +31,10 @@ found in an older version.
   request, and any key or header in it, cannot be carried to another host. The extension stops
   reading any answer past a size limit and refuses answers with too many rows. No request ever
   sends cookies.
-- **Your own sources reach only the sites you allowed.** The manifest can ask for `https://` sites
-  only as optional permissions, one site at a time, when you save a source; Chrome asks you first.
+- **Your own sources reach only the sites you allowed.** The manifest can ask for `https://` sites,
+  and for plain `http://` only on this computer (`localhost` and `127.0.0.1`), only as optional
+  permissions, one site at a time, when you save a source; Chrome asks you first. Every other
+  address must use `https://`, so a request, and any key in it, never crosses a network unencrypted.
   Before each request the extension checks that the site is still allowed. Sites no saved source
   needs (one allowed for a Try that was never saved, or one a source moved away from) are given back
   whenever sources change and whenever the settings page opens. A saved key stays with its site: a

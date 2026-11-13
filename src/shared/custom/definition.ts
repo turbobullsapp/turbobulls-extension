@@ -10,7 +10,10 @@ import { cleanText } from '../sanitize.js'
 export interface CustomSource {
   id: string
   name: string
-  /** https address with placeholders: {SYMBOL}, {FROM}, {TO}, {FROM_UNIX}, {TO_UNIX}, {KEY}. */
+  /**
+   * Address with placeholders: {SYMBOL}, {FROM}, {TO}, {FROM_UNIX}, {TO_UNIX}, {KEY}. It starts with
+   * https://, or with http:// for an address on this computer (see LOCAL_HOSTS).
+   */
   url: string
   format: 'json' | 'csv'
   json?: JsonFields
@@ -64,12 +67,43 @@ function str(value: unknown): string | undefined {
   return typeof value === 'string' ? value.trim() : undefined
 }
 
-/** The host part of an https address template: between `https://` and the first `/`, `?` or `#`. */
-export function templateHost(url: string): string | undefined {
-  if (!url.toLowerCase().startsWith('https://')) return undefined
-  const rest = url.slice('https://'.length)
+/**
+ * The hosts a source may reach over plain http, on any port: this computer's own addresses. Such a
+ * request never leaves the computer, so it needs no encryption, and prices kept on the computer can
+ * be read without publishing them anywhere. Every other host needs https.
+ */
+export const LOCAL_HOSTS = ['localhost', '127.0.0.1'] as const
+
+/** Whether a host, with or without a port, is one of LOCAL_HOSTS. */
+export function isLocalHost(host: string): boolean {
+  return (LOCAL_HOSTS as readonly string[]).includes(host.replace(/:\d{1,5}$/, '').toLowerCase())
+}
+
+/**
+ * The scheme and host of an address template, the host being what sits between `://` and the first
+ * `/`, `?` or `#`. Undefined unless the address starts with `https://`, or with `http://` and a host
+ * on this computer.
+ */
+export function templateSite(url: string): { scheme: 'https' | 'http'; host: string } | undefined {
+  const start = /^(https?):\/\//i.exec(url)
+  if (!start) return undefined
+  const scheme = (start[1] ?? '').toLowerCase() === 'https' ? 'https' : 'http'
+  const rest = url.slice(start[0].length)
   const end = rest.search(/[/?#]/)
-  return end === -1 ? rest : rest.slice(0, end)
+  const host = end === -1 ? rest : rest.slice(0, end)
+  if (scheme === 'http' && !isLocalHost(host)) return undefined
+  return { scheme, host }
+}
+
+/** The host part of an address template (see templateSite). */
+export function templateHost(url: string): string | undefined {
+  return templateSite(url)?.host
+}
+
+/** The origin a source talks to, like `https://api.example.com` or `http://localhost:8090`. */
+export function templateOrigin(url: string): string | undefined {
+  const site = templateSite(url)
+  return site && `${site.scheme}://${site.host}`
 }
 
 /** Whether the template sends the symbol, or a key (in the address or a header). */
@@ -139,7 +173,7 @@ export function parseCustomSource(input: unknown): ParseResult {
   const host = templateHost(url)
   if (!url) errors.push('The address is required.')
   else if (url.length > URL_MAX || CONTROL_RE.test(url) || /\s/.test(url)) errors.push(`The address must be one line up to ${URL_MAX} characters.`)
-  else if (!host) errors.push('The address must start with https://.')
+  else if (!host) errors.push('The address must start with https://, or with http://localhost or http://127.0.0.1 for an address on this computer.')
   else if (!/^[A-Za-z0-9.-]+(:\d{1,5})?$/.test(host)) errors.push('The address must name a plain host after https://, with no placeholder or @ in it.')
   else {
     checkTemplate(url, errors, PLACEHOLDERS, 'The address')

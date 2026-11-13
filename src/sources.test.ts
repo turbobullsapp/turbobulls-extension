@@ -85,6 +85,8 @@ describe('custom sources in extension storage', () => {
     expect(keyDecision(before, keyed('https://b.example.com/{SYMBOL}'), 'new-key')).toBe('typed')
     expect(keyDecision(undefined, keyed('https://b.example.com/{SYMBOL}'), '')).toBe('missing')
     expect(keyDecision(undefined, source('nokey'), '')).toBe('none')
+    expect(keyDecision(keyed('https://localhost:8443/{SYMBOL}'), keyed('http://localhost:8090/{SYMBOL}'), '')).toBe('retype')
+    expect(keyDecision(keyed('http://localhost:8090/{SYMBOL}'), keyed('http://localhost:9000/v2/{SYMBOL}'), '')).toBe('saved')
   })
 
   it('asks the browser whether it may reach a site, by host and without the port', async () => {
@@ -94,9 +96,21 @@ describe('custom sources in extension storage', () => {
     expect(await canReach('https://')).toBe(false)
   })
 
+  it('reaches plain http only on this computer', async () => {
+    const contains = vi.spyOn(fakeBrowser.permissions, 'contains').mockResolvedValue(true as never)
+    expect(await canReach('http://localhost:8090')).toBe(true)
+    expect(contains).toHaveBeenCalledWith({ origins: ['http://localhost/*'] })
+    contains.mockClear()
+    expect(await canReach('http://api.example.com')).toBe(false)
+    expect(await canReach('http://192.168.1.10:8090')).toBe(false)
+    expect(contains).not.toHaveBeenCalled()
+  })
+
   it('builds site patterns and ids', () => {
     expect(hostOf(source('xx', 'https://API.example.com:8443/{SYMBOL}'))).toBe('api.example.com')
     expect(sitePattern(source('xx', 'https://api.example.com:8443/{SYMBOL}'))).toBe('https://api.example.com/*')
+    expect(sitePattern(source('xx', 'http://localhost:8090/{SYMBOL}.csv'))).toBe('http://localhost/*')
+    expect(sitePattern(source('xx', 'http://127.0.0.1/{SYMBOL}'))).toBe('http://127.0.0.1/*')
     expect(newSourceId('My Pension Fund!', [])).toBe('mypensionfund')
     expect(newSourceId('My Pension Fund', ['mypensionfund'])).toBe('mypensionfund2')
     expect(newSourceId('EODHD', [])).toBe('eodhd2')

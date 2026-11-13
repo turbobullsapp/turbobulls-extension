@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { fakeFetch, TEST_KEY } from '../__fixtures__/fake-fetch.js'
 import { dispatch, type DispatchDeps } from '../dispatch.js'
 import { ConnectorError } from '../protocol/errors.js'
-import { parseCustomSource, type CustomSource } from './definition.js'
+import { parseCustomSource, templateOrigin, type CustomSource } from './definition.js'
 import { buildUrl, customHistory } from './history.js'
 import { csvRows, getPath, jsonRows, parseDate, parseNumber, splitCsv } from './parse.js'
 
@@ -42,11 +42,28 @@ describe('parseCustomSource', () => {
     expect(s.csv).toEqual({ date: '1', close: '4', delimiter: ';' })
   })
 
+  it('accepts plain http only for an address on this computer, on any port', () => {
+    for (const url of ['http://localhost:8090/{SYMBOL}.csv', 'http://127.0.0.1/prices?s={SYMBOL}', 'HTTP://LocalHost:8090/{SYMBOL}', 'http://localhost/{SYMBOL}']) {
+      expect(parseCustomSource({ ...source(), url }).ok).toBe(true)
+    }
+    expect(templateOrigin('http://localhost:8090/{SYMBOL}.csv')).toBe('http://localhost:8090')
+    expect(templateOrigin('https://api.example.com/nav/{SYMBOL}')).toBe('https://api.example.com')
+    expect(templateOrigin('http://api.example.com/nav/{SYMBOL}')).toBeUndefined()
+  })
+
   it.each([
     [{ id: 'eodhd' }, 'taken by a built-in'],
     [{ id: 'My Pension' }, 'lower-case'],
     [{ name: '' }, 'name is required'],
     [{ url: 'http://api.example.com/x' }, 'https://'],
+    [{ url: 'http://api.example.com/x' }, 'http://localhost'],
+    [{ url: 'http://192.168.1.10/prices.csv' }, 'http://localhost'],
+    [{ url: 'http://localhost.example.com/x' }, 'http://localhost'],
+    [{ url: 'http://localhost:8090@evil.example/x' }, 'http://localhost'],
+    [{ url: 'http://127.0.0.2/x' }, 'http://localhost'],
+    [{ url: 'http://127.1/x' }, 'http://localhost'],
+    [{ url: 'http://[::1]:8090/x' }, 'http://localhost'],
+    [{ url: 'ftp://localhost/x' }, 'https://'],
     [{ url: 'https://{SYMBOL}.example.com/x' }, 'plain host'],
     [{ url: 'https://user@api.example.com/x' }, 'plain host'],
     [{ url: 'https://api.example.com/{TICKER}' }, 'unknown placeholder'],
@@ -155,6 +172,17 @@ describe('buildUrl', () => {
     expect(() => buildUrl(source(), { symbol: '..', from: '2026-10-01', to: '2026-10-26' })).toThrow(ConnectorError)
   })
 
+  it('keeps a source on this computer on plain http and on its own port', () => {
+    const s = source({ url: 'http://localhost:8090/{SYMBOL}.csv' })
+    expect(buildUrl(s, { symbol: 'pension', from: '2026-10-01', to: '2026-10-26' })).toBe('http://localhost:8090/pension.csv')
+    expect(() => buildUrl(s, { symbol: '../secret', from: '2026-10-01', to: '2026-10-26' })).toThrow(ConnectorError)
+  })
+
+  it('refuses plain http to any other host, even from a source that skipped the checks', () => {
+    const s: CustomSource = { ...source(), url: 'http://api.example.com/nav/{SYMBOL}' }
+    expect(() => buildUrl(s, { symbol: 'X1', from: '2026-10-01', to: '2026-10-26' })).toThrow(ConnectorError)
+  })
+
   it('fills unix dates and the key', () => {
     const s = source({ url: 'https://api.example.com/q?s={SYMBOL}&a={FROM_UNIX}&b={TO_UNIX}&k={KEY}' })
     const url = new URL(buildUrl(s, { symbol: 'X', from: '2026-10-23', to: '2026-10-23', key: 'a&b' }))
@@ -206,6 +234,13 @@ describe('customHistory', () => {
       currency: 'GBP',
       prices: [{ date: '2026-10-23', close: 3.574 }],
     })
+  })
+
+  it('reads a file served on this computer over plain http', async () => {
+    const s = source({ format: 'csv', json: undefined, csv: { date: 'Date', close: 'Close' }, url: 'http://localhost:8090/{SYMBOL}.csv' })
+    const { fetch, calls } = fakeFetch([{ match: (url) => url.href === 'http://localhost:8090/pension.csv', text: 'Date,Close\n2026-10-23,101.50\n' }])
+    expect((await customHistory(s, 'pension', '2026-10-01', '2026-10-26', { fetch })).prices).toEqual([{ date: '2026-10-23', close: 101.5 }])
+    expect(calls[0]).toMatchObject({ redirect: 'error', credentials: 'omit' })
   })
 
   it('says plainly when the paths point at nothing', async () => {
@@ -287,6 +322,17 @@ describe('dispatch with custom sources', () => {
     expect(JSON.stringify(answer)).not.toContain('api.example.com')
     expect(seen).toEqual(['https://api.example.com'])
     expect(calls).toHaveLength(0)
+  })
+
+  it('asks with the scheme and the port for a source on this computer', async () => {
+    const seen: string[] = []
+    const local = source({ url: 'http://localhost:8090/nav/{SYMBOL}' })
+    const answer = await dispatch(
+      { v: 1, id: 'q', op: 'history', params: { provider: 'mypension', symbol: 'RO123', from: '2026-10-01' } },
+      deps({ customSources: () => [local], canReach: (origin) => (seen.push(origin), true) }),
+    )
+    expect(seen).toEqual(['http://localhost:8090'])
+    expect(answer).toMatchObject({ ok: true })
   })
 })
 
