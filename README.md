@@ -164,7 +164,9 @@ any port. Plain `http://` is accepted only for these two, since such a request n
 computer. Any small web server can serve the file. For example, in the folder that holds
 `pension.csv`, run `python3 -m http.server 8090 --bind 127.0.0.1`, then use
 `http://localhost:8090/{SYMBOL}.csv` as the address and `pension` as the symbol. The server has to
-be running when Turbobulls asks for prices.
+be running when Turbobulls asks for prices. Serve a folder that holds only your price files, and keep
+`--bind 127.0.0.1`: without it, anyone on the same network, such as a cafe's Wi-Fi, can open that
+folder.
 
 New to this? **Fill in the ECB example** on the settings page sets up a free public feed to start
 from: one euro in US dollars, from the European Central Bank.
