@@ -60,12 +60,12 @@ downloaded package with the GitHub CLI:
 gh attestation verify turbobulls-extension-1.0.0-chrome.zip --repo turbobullsapp/turbobulls-extension
 ```
 
-From 1.0.3 on, each GitHub release also carries that record as a file,
+From 1.1.0 on, each GitHub release also carries that record as a file,
 `turbobulls-extension-<version>.sigstore.json` (one record for both packages), so a download can be
 checked against it without looking the record up on GitHub:
 
 ```bash
-gh attestation verify turbobulls-extension-1.0.3-chrome.zip --bundle turbobulls-extension-1.0.3.sigstore.json --repo turbobullsapp/turbobulls-extension
+gh attestation verify turbobulls-extension-1.1.0-chrome.zip --bundle turbobulls-extension-1.1.0.sigstore.json --repo turbobullsapp/turbobulls-extension
 ```
 
 The stores re-sign what they publish, so this checks the files on the GitHub release, which are

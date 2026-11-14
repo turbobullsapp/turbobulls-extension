@@ -6,8 +6,14 @@ All notable changes are written down here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-14
+
 ### Added
 
+- A source of your own can read a file served on your own computer: its address may start with
+  `http://localhost` or `http://127.0.0.1`, on any port. Every other address still needs
+  `https://`. The extension asks once for permission to reach that address when such a source is
+  saved.
 - Each GitHub release carries the packages' signed build record as a file,
   `turbobulls-extension-<version>.sigstore.json`, to check a download against.
 
@@ -32,6 +38,7 @@ The first public release. It speaks version 1 of the protocol in [PROTOCOL.md](P
   each key with one small request, and how your keys and data are kept private.
 - Talks only to `https://app.turbobulls.com`; cannot read any web page.
 
-[Unreleased]: https://github.com/turbobullsapp/turbobulls-extension/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/turbobullsapp/turbobulls-extension/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/turbobullsapp/turbobulls-extension/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/turbobullsapp/turbobulls-extension/compare/v1.0.0...v1.0.2
 [1.0.0]: https://github.com/turbobullsapp/turbobulls-extension/releases/tag/v1.0.0
