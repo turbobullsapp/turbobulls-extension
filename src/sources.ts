@@ -1,7 +1,7 @@
 import { browser } from 'wxt/browser'
 import { setKey } from './keys'
 import { PROVIDER_HOSTS } from './manifest'
-import { parseCustomSource, templateHost, usesKey, type CustomSource } from './shared/custom/definition.js'
+import { parseCustomSource, templateHost, templateSite, usesKey, type CustomSource } from './shared/custom/definition.js'
 import { CUSTOM_ID_RE, LIMITS, PROVIDER_IDS } from './shared/protocol/types.js'
 
 /**
@@ -62,7 +62,7 @@ export function keyDecision(
   typed: string,
 ): 'typed' | 'saved' | 'none' | 'retype' | 'missing' {
   if (typed.trim()) return 'typed'
-  if (existing && hostOf(existing) === hostOf(next)) return 'saved'
+  if (existing && siteOf(existing) === siteOf(next)) return 'saved'
   if (usesKey(next)) return existing ? 'retype' : 'missing'
   return 'none'
 }
@@ -78,16 +78,32 @@ export function hostOf(source: Pick<CustomSource, 'url'>): string {
   return (templateHost(source.url) ?? '').replace(/:\d+$/, '').toLowerCase()
 }
 
-/** The permission pattern for a source's site: `https://host/*` (a pattern covers every port). */
-export function sitePattern(source: Pick<CustomSource, 'url'>): string {
-  return `https://${hostOf(source)}/*`
+/**
+ * The site a source talks to: its scheme and its host without a port, like `https://api.example.com`,
+ * or `http://localhost` for a source on this computer. A key stays with this, scheme included.
+ */
+export function siteOf(source: Pick<CustomSource, 'url'>): string {
+  const site = templateSite(source.url)
+  return site ? `${site.scheme}://${site.host.replace(/:\d+$/, '').toLowerCase()}` : ''
 }
 
-/** Whether the user has let the extension reach this origin (`https://host[:port]`). */
+/**
+ * The permission pattern for a source's site: `https://host/*`, or `http://localhost/*` for a
+ * source on this computer (a pattern covers every port).
+ */
+export function sitePattern(source: Pick<CustomSource, 'url'>): string {
+  return `${siteOf(source)}/*`
+}
+
+/**
+ * Whether the user has let the extension reach this origin: `https://host[:port]`, or plain
+ * `http://` to a host on this computer. Any other origin is never reachable.
+ */
 export async function canReach(origin: string): Promise<boolean> {
-  const host = origin.replace(/^https:\/\//, '').replace(/:\d+$/, '').toLowerCase()
-  if (!host) return false
-  return browser.permissions.contains({ origins: [`https://${host}/*`] })
+  const site = templateSite(origin)
+  const host = site?.host.replace(/:\d+$/, '').toLowerCase()
+  if (!site || !host) return false
+  return browser.permissions.contains({ origins: [`${site.scheme}://${host}/*`] })
 }
 
 /** An id for a new source, from its name: lower-case letters and digits, unique, never a built-in id. */

@@ -5,7 +5,7 @@ import { toMajor } from '../providers/currency.js'
 import { CUSTOM_ANSWER_BYTES, getText, retryAfterSeconds, type TextAnswer } from '../providers/http.js'
 import { finalizeSeries, type RawRow } from '../providers/series.js'
 import type { FetchLike } from '../providers/types.js'
-import { usesKey, type CustomSource } from './definition.js'
+import { isLocalHost, usesKey, type CustomSource } from './definition.js'
 import { csvRows, jsonRows, MAX_COLUMNS, MAX_ROWS, TooLarge } from './parse.js'
 
 export interface CustomContext {
@@ -31,7 +31,8 @@ function pathValue(symbol: string): string {
 /**
  * Fill the address template. The host is fixed by the template (placeholders are not allowed
  * there), every value is encoded, and the result must keep the template's host and the literal
- * start of its path, so the symbol can never change where the request goes.
+ * start of its path, so the symbol can never change where the request goes. Plain http is used
+ * only for a host on this computer.
  */
 export function buildUrl(source: CustomSource, values: { symbol: string; from: string; to: string; key?: string }): string {
   const queryStart = source.url.search(/[?#]/)
@@ -61,7 +62,9 @@ export function buildUrl(source: CustomSource, values: { symbol: string; from: s
   const firstPlaceholder = source.url.indexOf('{')
   const literal = firstPlaceholder === -1 ? source.url : source.url.slice(0, firstPlaceholder)
   const folder = new URL(literal).pathname.replace(/[^/]*$/, '')
-  if (built.protocol !== 'https:' || built.host !== template.host || !built.pathname.startsWith(folder)) {
+  // What goes out: https, or plain http only to a host on this computer.
+  const allowedScheme = built.protocol === 'https:' || (built.protocol === 'http:' && isLocalHost(built.host))
+  if (!allowedScheme || built.host !== template.host || !built.pathname.startsWith(folder)) {
     throw refuse()
   }
   return out

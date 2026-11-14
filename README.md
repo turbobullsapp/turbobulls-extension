@@ -57,7 +57,8 @@ prices come back.
 - **No access to web pages.** No content scripts and no access to your tabs, Turbobulls included.
 - **One website only.** Only `https://app.turbobulls.com` can talk to the extension, and only from
   the page itself, never from a frame.
-- **Four providers built in**, plus any `https://` source of your own that answers JSON or CSV.
+- **Four providers built in**, plus any `https://` source of your own that answers JSON or CSV, or a
+  file served on your own computer.
 - **Small and auditable.** Open source, and the store packages are built from tagged commits by a
   public release workflow.
 
@@ -108,7 +109,7 @@ What you can price depends on your plan with the provider.
 | [Twelve Data](https://twelvedata.com) | Stocks, ETFs, forex and crypto | Showing prices needs a paid plan |
 | [Alpha Vantage](https://www.alphavantage.co) | Stocks and ETFs | The free plan allows few requests a day |
 | [Finnhub](https://finnhub.io) | Stocks | Daily prices need a paid plan |
-| [A source of your own](#your-own-sources) | Anything an `https://` address returns as JSON or CSV | No search: you type the symbol |
+| [A source of your own](#your-own-sources) | Anything an `https://` address, or one on your own computer, returns as JSON or CSV | No search: you type the symbol |
 
 EODHD, Twelve Data, Alpha Vantage and Finnhub are named only to show which services the Connector
 can ask with your own key. Turbobulls is not affiliated with or endorsed by any of them, and your use
@@ -135,7 +136,7 @@ The extension asks for as little as it can:
 |---|---|
 | `storage` | To keep your API keys and your own sources on this device. Never synced to your browser account. |
 | `eodhd.com`, `api.twelvedata.com`, `www.alphavantage.co`, `finnhub.io` | To call your provider's API. |
-| Optional: one `https://` site at a time | Only when you add a source of your own, and only for its site. The browser asks you first; removing the source gives the permission back. |
+| Optional: one `https://` site at a time, or `http://localhost` and `http://127.0.0.1` | Only when you add a source of your own, and only for its site. The browser asks you first; removing the source gives the permission back. |
 
 - **It cannot read any web page.** It has no content scripts and no access to your tabs.
 - **Only `https://app.turbobulls.com` can talk to it.** Other websites cannot even see that it is
@@ -156,6 +157,16 @@ answers JSON or CSV. Give it a name, the address with placeholders (`{SYMBOL}`, 
 `{FROM_UNIX}`, `{TO_UNIX}`, `{KEY}`), where the date and the price sit in the answer, the date
 format, the currency, and a key if the source needs one. **Try it** fetches the last 30 days and
 shows what it read, or why nothing matched.
+
+**Prices kept on your computer.** For prices you keep yourself, such as a fund priced from monthly
+statements, the address can be on your own computer: `http://localhost` or `http://127.0.0.1`, on
+any port. Plain `http://` is accepted only for these two, since such a request never leaves the
+computer. Any small web server can serve the file. For example, in the folder that holds
+`pension.csv`, run `python3 -m http.server 8090 --bind 127.0.0.1`, then use
+`http://localhost:8090/{SYMBOL}.csv` as the address and `pension` as the symbol. The server has to
+be running when Turbobulls asks for prices. Serve a folder that holds only your price files, and keep
+`--bind 127.0.0.1`: without it, anyone on the same network, such as a cafe's Wi-Fi, can open that
+folder.
 
 New to this? **Fill in the ECB example** on the settings page sets up a free public feed to start
 from: one euro in US dollars, from the European Central Bank.

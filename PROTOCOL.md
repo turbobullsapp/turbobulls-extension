@@ -109,8 +109,9 @@ answers `UNSUPPORTED_OPERATION`; its keys live in its config file.
 ## Custom sources
 
 Besides the four built-in providers, a user can define their own sources in a connector: a web
-address with placeholders, the format of the answer (JSON or CSV), where the date and the price sit
-in it, and the currency. They are defined only in the connector (the extension's settings page or
+address with placeholders (`https://`, or plain `http://` only for `localhost` and `127.0.0.1`, the
+user's own computer), the format of the answer (JSON or CSV), where the date and the price sit in
+it, and the currency. They are defined only in the connector (the extension's settings page or
 the bridge's config file); the app cannot add, change or read them, and never sends an address.
 
 A custom source appears in `hello.providers` like this:

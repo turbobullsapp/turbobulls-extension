@@ -18,9 +18,10 @@ function matchPattern(origin: string): string {
 
 /**
  * Sites the user may let the extension reach, one at a time, for custom sources they add on the
- * settings page. Asked for per site when a source is saved, never at install.
+ * settings page. Asked for per site when a source is saved, never at install. Plain http only for
+ * this computer's own addresses (LOCAL_HOSTS in the shared source definition).
  */
-export const OPTIONAL_HOSTS = ['https://*/*'] as const
+export const OPTIONAL_HOSTS = ['https://*/*', 'http://localhost/*', 'http://127.0.0.1/*'] as const
 
 /**
  * The manifest. No content scripts and no page permissions: the extension cannot read any page,
